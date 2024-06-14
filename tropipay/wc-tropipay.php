@@ -21,13 +21,13 @@
 * 
 * Tropipay
 */
-
+include __DIR__ . "/TppSDK/TropiPay.php";
 
 class WC_Tropipay extends WC_Payment_Gateway {
 
     public function __construct() {
         $this->id                 = 'tropipay';
-        //$this->icon               = home_url() . '/wp-content/plugins/redsys/pages/assets/images/Redsys.png';
+        // $this->icon               = home_url() . '/wp-content/plugins/tropipay/pages/assets/images/logoTropiPayp2.png';
         $this->method_title       = __( 'Pago con Tarjeta (Tropipay)', 'woocommerce' );
         $this->method_description = __( 'Esta es la opción de la pasarela de pago de Tropipay.', 'woocommerce' );
         $this ->notify_url        = add_query_arg( 'wc-api', 'WC_tropipay', home_url( '/' ) );
@@ -39,6 +39,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         // Load the settings
         $this->init_settings();
         $this->init_form_fields();
+        //$this->payment_fields();
 
         $this->title              = $this->get_option( 'title' );
         $this->description        = $this->get_option( 'description' );
@@ -50,13 +51,24 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $this->tropipaymoneda             = $this->get_option( 'tropipaymoneda' );
         $this->tropipayactivar_log	  = $this->get_option( 'tropipayactivar_log' );
         $this->tropipayestado             = $this->get_option( 'tropipayestado' );
+        $this->tropipayaddFees                  = $this->get_option( 'tropipayaddFees');
+        $this->tropipayfeecardpercent = $this->get_option('tropipayfeecardpercent');
+        $this->tropipayfeecardfixed = $this->get_option('tropipayfeecardfixed');
+        $this->tropipayfeebalancepercent = $this->get_option('tropipayfeebalancepercent');
+        $this->tropipayfeebalancefixed = $this->get_option('tropipayfeebalancefixed');
+        $this->tropipayshowfees = $this->get_option('tropipayshowfees');
+        $this->tropipayshowlogo = $this->get_option('tropipayshowlogo');
+        
 
 
         // Actions
-        add_action( 'woocommerce_receipt_tropipay', array( $this, 'receipt_page' ) );
+        add_action( 'woocommerce_receipt_tropipay', array( $this, 'receipt_page_tropipay' ) );
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         //Payment listener/API hook
         add_action( 'woocommerce_api_wc_tropipay', array( $this, 'check_rds_response' ) );
+        add_action( 'wp_enqueue_scripts', [ $this, 'payment_scripts' ] );
+
+        
     }
 
     function generateIdLog() {
@@ -68,6 +80,24 @@ class WC_Tropipay extends WC_Payment_Gateway {
         }
         return $result;
     }
+
+    function payment_scripts() {
+        wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', WC_TROPIPAY_MAIN_FILE ));
+		wp_enqueue_style( 'tropipay_styles' );
+    }
+
+    /*function payment_fields() {
+        global $woocommerce;
+        //echo '<label for="mi_metodo_pago_tipo_pago">Seleccione el tipo de pago:</label>';
+        echo '<div>';
+        echo '<input type="radio" id="mi_metodo_pago_tipo_pago_tarjeta" name="mi_metodo_pago_tipo_pago" value="tarjeta" required>';
+        echo '<label for="mi_metodo_pago_tipo_pago_tarjeta">Tarjeta de crédito</label>';
+        echo '</div>';
+        echo '<div>';
+        echo '<input type="radio" id="mi_metodo_pago_tipo_pago_balance" name="mi_metodo_pago_tipo_pago" value="balance" required>';
+        echo '<label for="mi_metodo_pago_tipo_pago_balance">Pagar con balance de TropiPay</label>';
+        echo '</div>';
+    }*/
 
     function init_form_fields() {
         global $woocommerce;
@@ -84,7 +114,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         'title'       => __( 'Título', 'woocommerce' ),
                         'type'        => 'text',
                         'description' => __( 'Payment method description that the customer will see on your checkout.', 'woocommerce' ),
-                        'default'     => __( 'Pago con tarjeta', 'woocommerce' ),
+                        'default'     => __( 'Pago con TropiPay', 'woocommerce' ),
                         'desc_tip'    => true,
                 ),
                 'description' => array(
@@ -105,17 +135,17 @@ class WC_Tropipay extends WC_Payment_Gateway {
                                 'Live' => __( 'Live', 'woocommerce' )
                         )
                 ),
-                'tropipaymail' => array(
-                        'title'       => __( 'Email de usuario', 'woocommerce' ),
+                'clientid' => array(
+                        'title'       => __( 'Client Id', 'woocommerce' ),
                         'type'        => 'text',
-                        'description' => __( 'Email de usuario', 'woocommerce' ),
-                        'default'     => __( 'Mail', 'woocommerce' ),
+                        'description' => __( 'Client Id', 'woocommerce' ),
+                        'default'     => __( 'Client Id', 'woocommerce' ),
                         'desc_tip'    => true,
                 ),
-                'tropipaypassw' => array(
-                        'title'       => __( 'Password', 'woocommerce' ),
+                'clientsecret' => array(
+                        'title'       => __( 'Client Secret', 'woocommerce' ),
                         'type'        => 'password',
-                        'description' => __( 'Password.', 'woocommerce' ),
+                        'description' => __( 'Client Secret.', 'woocommerce' ),
                         'default'     => __( '', 'woocommerce' ),
                         'desc_tip'    => true
                 ),
@@ -123,9 +153,10 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         'title'       => __( 'Tipo de Moneda', 'woocommerce' ),
                         'type'        => 'select',
                         'description' => __( 'Moneda del proceso de pago.', 'woocommerce' ),
-                        'default'     => 'EUR',
+                        'default'     => 'AUTO',
                         'desc_tip'    => true,
                         'options'     => array(
+                                'AUTO' => __( 'AUTO', 'woocommerce' ),
                                 'EUR' => __( 'EURO', 'woocommerce' ),
                                 'USD' => __( 'DOLAR', 'woocommerce' )
                         )
@@ -133,7 +164,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                 'tropimethod' => array(
                     'title'           => __( 'Método del formulario', 'woocommerce' ),
                     'type'            => 'select',
-                    'description'     => __( 'Formulario embebido o redirección externa', 'woocommerce'),
+                    'description'     => __( 'Formulario embebido o redirección externa, para pagos con balance de TropiPay siempre será redirección', 'woocommerce'),
                     'default'         => 'redirect',
                     'desc_tip'        => true,
                     'options'         => array(
@@ -141,19 +172,50 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         'embed' => __('Formulario embebido' , 'woocommerce')
                     )
                 ),
-                'tropinotifyclient' => array(
-                    'title'           => __( 'Enviar email del pago a cliente', 'woocommerce' ),
-                    'type'            => 'select',
-                    'description'     => __( '', 'woocommerce'),
-                    'default'         => 'Si',
-                    'desc_tip'        => true,
-                    'options'         => array(
-                        'Si' => __('Sí', 'woocommerce'),
-                        'No' => __('No' , 'woocommerce')
+                'tropipaymentmethods' => array(
+                    'title'            => __( 'Formas de pago', 'woocommerce' ),
+                    'type'             => 'select',
+                    'description'      => __( 'Seleccione las formas de pago que desee', 'woocommerce'),
+                    'default'          => '',
+                    'desc_tip'         => true,
+                    'options'          => array(
+                        'normal' => __('Pagar con tarjeta y con saldo Tropipay', 'woocommerce'),
+                        'onlycard' => __('Solo Pagar con tarjeta', 'woocommerce'),
+                        'onlytpp' => __('Solo Pagar con Tropipay', 'woocommerce'),
                     )
                 ),
+                'tropipayshowlogo' => array(
+                    'title'       => __( 'Mostrar logo de TropiPay', 'woocommerce' ),
+                    'type'        => 'select',
+                    'description' => __( '', 'woocommerce' ),
+                    'default'     => 'si',
+                    'desc_tip'    => true,
+                    'options'     => array(
+                            'no' => __( 'No', 'woocommerce' ),
+                            'si' => __( 'Si', 'woocommerce' )
+                    )
+                ),
+                'tropipayactivar_log' => array(
+                        'title'       => __( 'Activar Log', 'woocommerce' ),
+                        'type'        => 'select',
+                        'description' => __( 'Activar trazas de log.', 'woocommerce' ),
+                        'default'     => 'no',
+                        'desc_tip'    => true,
+                        'options'     => array(
+                                'no' => __( 'No', 'woocommerce' ),
+                                'si' => __( 'Si', 'woocommerce' )
+                        )
+                ),
+				'tropipayestado' => array(
+					'title'       => __( 'Estado', 'tropipay-woo' ),
+					'type'        => 'select',
+					'description' => __( 'Estado tras el pago.', 'tropipay-woo' ),
+					'default'     => 'no',
+					'desc_tip'    => true,
+					'options'     => array()
+				),
                 'tropiexpirationdays' => array(
-                    'title'           => __( 'Días de cancelación', 'woocommerce'),
+                    'title'           => __( 'Días de cancelación', 'tropipay-woo'),
                     'type'            => 'select',
                     'description'     => __( '', 'woocommerce'),
                     'default'         => 0,
@@ -174,25 +236,56 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         20 => '20'
                     )
                 ),
-                'tropipayactivar_log' => array(
-                        'title'       => __( 'Activar Log', 'woocommerce' ),
-                        'type'        => 'select',
-                        'description' => __( 'Activar trazas de log.', 'woocommerce' ),
-                        'default'     => 'no',
-                        'desc_tip'    => true,
-                        'options'     => array(
-                                'no' => __( 'No', 'woocommerce' ),
-                                'si' => __( 'Si', 'woocommerce' )
-                        )
-                ),
-				'tropipayestado' => array(
-					'title'       => __( 'Estado', 'redsys_wc' ),
+				'tropipayaddFees' => array(
+					'title'       => __( 'Agregar Fees', 'tropipay-woo' ),
 					'type'        => 'select',
-					'description' => __( 'Estado tras el pago.', 'redsys_wc' ),
+					'description' => __( 'Agregar Fees.', 'tropipay-woo' ),
 					'default'     => 'no',
 					'desc_tip'    => true,
-					'options'     => array()
-				)
+                    'options'     => array(
+                        'no' => __( 'No', 'woocommerce' ),
+                        'si' => __( 'Si', 'woocommerce' )
+                    )
+                ),
+                'tropipayfeecardpercent' => array(
+                    'title'       => __( 'Fee de pago por tarjeta (%)', 'woocommerce' ),
+                    'type'        => 'text',
+                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 3.45)', 'woocommerce' ),
+                    'default'     => '3.45',
+                    'desc_tip'    => true,
+                ),
+                'tropipayfeecardfixed' => array(
+                    'title'       => __( 'Fee de pago por tarjeta (fijo)', 'woocommerce' ),
+                    'type'        => 'text',
+                    'description' => __( 'Fee fijo para tarjeta (valor por defecto: 0.5)', 'woocommerce' ),
+                    'default'     => '0.5',
+                    'desc_tip'    => true,
+                ),
+                'tropipayfeebalancepercent' => array(
+                    'title'       => __( 'Fee de pago con balance (%)', 'woocommerce' ),
+                    'type'        => 'text',
+                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 1.0)', 'woocommerce' ),
+                    'default'     => '1.0',
+                    'desc_tip'    => true,
+                ),
+                'tropipayfeebalancefixed' => array(
+                    'title'       => __( 'Fee de pago con balance (fijo)', 'woocommerce' ),
+                    'type'        => 'text',
+                    'description' => __( 'Fee fijo para balance (valor por defecto: 0)', 'woocommerce' ),
+                    'default'     => '0',
+                    'desc_tip'    => true,
+                ),
+				'tropipayshowfees' => array(
+					'title'       => __( 'Mostrar fees', 'tropipay-woo' ),
+					'type'        => 'select',
+					'description' => __( 'Mostrar Fees.', 'tropipay-woo' ),
+					'default'     => 'no',
+					'desc_tip'    => true,
+                    'options'     => array(
+                        'no' => __( 'No', 'woocommerce' ),
+                        'si' => __( 'Si', 'woocommerce' )
+                    )
+                )
 			   	);
 				
 				$tmp_estados=wc_get_order_statuses();
@@ -205,11 +298,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         global $woocommerce;
         $order = new WC_Order($order_id);
         $logActivo=$this->tropipayactivar_log;
-
-        //Esquema de logs de Redsys
-        //$this->log->add( 'redsys', 'Acceso a la opción de pago con tarjeta de REDSYS ');
         $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso a la opción de pago con tarjeta de Tropipay",$logActivo);
-
         // Return receipt_page redirect
         return array(
             'result' 	=> 'success',
@@ -217,33 +306,19 @@ class WC_Tropipay extends WC_Payment_Gateway {
         );
     }
 
-    function generate_redsys_form( $order_id ) {
+    function generate_tropipay_form( $order_id ) {
             // Version
         $merchantModule = 'woocommerce_tropipay_1.0.0';
 
-
         //Recuperamos los datos de config.
         $logActivo=$this->get_option('tropipayactivar_log');
-        $mail=$this->get_option('tropipaymail');
-        $pass=$this->get_option('tropipaypassw');
-        
-        $moneda=$this->get_option('tropipaymoneda');
-        
-        
+        $clientid=$this->get_option('clientid');
+        $clientsecret=$this->get_option('clientsecret');
+        $monedaconf=$this->get_option('tropipaymoneda');
         $entorno=$this->get_option('tropipayentorno');
-
         $tropimethod=$this->get_option('tropimethod');
-        $tropinotifyclient=$this->get_option('tropinotifyclient');
-        if($tropinotifyclient=='Si') {
-            $tropinotifyclient=true;
-        }
-        else {
-            $tropinotifyclient=false;
-        }
+        $tropipaymentmethods=$this->get_option('tropipaymentmethods');
 
-
-        //Esquema de logs de Redsys
-        //$this->log->add( 'redsys', 'Acceso al formulario de pago con tarjeta de REDSYS ');
         $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso al formulario de pago con tarjeta de Tropipay",$logActivo);
 
         //Callback
@@ -253,156 +328,101 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $order = new WC_Order($order_id);
 
         //Calculo del precio total del pedido
-        $transaction_amount = number_format( (float) ($order->get_total()), 2, '.', '' );
+        /*$transaction_amount = number_format( (float) ($order->get_total()), 2, '.', '' );
         $transaction_amount = str_replace('.','',$transaction_amount);
-        $transaction_amount = floatval($transaction_amount);
+        $transaction_amount = floatval($transaction_amount);*/
+        $transaction_amount = (int) str_replace(',', '', number_format($order->get_total() * 100, 2));
 
-        // Descripción de los productos
-        /*$productos="";
-        $products = WC()->cart->cart_contents;
-        foreach ($products as $product) {
-            $productos .= $product['quantity'].'x'.$product['data']->post->post_title.'/';
-        }*/
+        if($monedaconf === 'AUTO') {
+            $moneda = $order->get_currency();
+        } else {
+            $moneda = $monedaconf;
+        }
+
 
         $numpedido =  str_pad($order_id, 8, "0", STR_PAD_LEFT).date('is');
-
-
-        // Generamos la firma	
-        /*$miObj = new RedsysAPI;
-        $miObj->setParameter("DS_MERCHANT_AMOUNT",$transaction_amount);
-        $miObj->setParameter("DS_MERCHANT_ORDER",$numpedido);
-        $miObj->setParameter("DS_MERCHANT_MERCHANTCODE",$codigo);
-        $miObj->setParameter("DS_MERCHANT_CURRENCY",$moneda);
-        $miObj->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
-        $miObj->setParameter("DS_MERCHANT_TERMINAL",$terminal);
-        $miObj->setParameter("DS_MERCHANT_MERCHANTURL",$urltienda);
-        $miObj->setParameter("DS_MERCHANT_URLOK",$this->get_return_url($order));
-        $miObj->setParameter("DS_MERCHANT_URLKO",$order->get_cancel_order_url());
-        $miObj->setParameter("Ds_Merchant_ConsumerLanguage",$idiomaFinal);
-        $miObj->setParameter("Ds_Merchant_ProductDescription",$productos);
-        $miObj->setParameter("Ds_Merchant_Titular",$order -> billing_first_name." ".$order -> billing_last_name);
-        $miObj->setParameter("Ds_Merchant_MerchantData",sha1($urltienda));
-        $miObj->setParameter("Ds_Merchant_MerchantName",$nombre);
-        $miObj->setParameter("Ds_Merchant_PayMethods",$tipopago);
-        $miObj->setParameter("Ds_Merchant_Module",$merchantModule);*/
-
-
-        
 
         //Se establece el entorno del SIS
         if($entorno=="Sandbox"){
             $tropipay_server="https://tropipay-dev.herokuapp.com";
+            $environment="develop";
         }
         else if($entorno=="Live"){
             $tropipay_server="https://www.tropipay.com";
+            $environment="production";
         }
 
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => $tropipay_server . "/api/access/login",
-        //CURLOPT_HTTPHEADER => array ('Content-Type: application/json','Content-Length: ' . strlen($data_string)),
-        CURLOPT_HTTPHEADER => array ('Content-Type: application/json'),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => "{\"email\":\"" . $mail ."\",\"password\":\"" . $pass . "\"}",
-        ));
+        $srv = new TropiPay($clientid, $clientsecret, $environment);
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
+        $datetime = new DateTime('today');
+        $arraycliente["name"]=$order->get_billing_first_name();
+        $arraycliente["lastName"]=$order->get_billing_last_name();
+        $arraycliente["address"]=$order->get_billing_address_1() . ", " . $order->get_billing_city() . ", " . $order->get_billing_postcode();
+        if($order->get_billing_phone()) {
+            $arraycliente["phone"]=$order->get_billing_phone();
+        } else {
+            $arraycliente["phone"]=$order->get_shipping_phone();
+        }
+        $arraycliente["email"]=$order->get_billing_email();
+        //$arraycliente["countryId"] = 1;
+        $arraycliente["countryIso"] = $order->get_billing_country();
+        if(strlen($arraycliente["countryIso"])==0) {
+            $arraycliente["countryId"] = 1;
+            unset( $arraycliente["countryIso"] );
+        }
+        $arraycliente["termsAndConditions"] = true;
+        $arraycliente["state"]=$order->get_billing_state();
+        $arraycliente["city"]=$order->get_billing_city();
+        $arraycliente["postCode"]=$order->get_billing_postcode();
+        //$moneda=$this->get_option('tropipaymoneda');
+        $datos=array(
+            "reference" => $numpedido,
+            "concept" => __('Order #: ') . $order->get_id(),
+            "description" => " ",
+            "amount" => $transaction_amount,
+            "currency" => $moneda,
+            "singleUse" => true,
+            "reasonId" => 4,
+            "expirationDays" => $this->get_option('tropiexpirationdays'),
+            "lang" => "es",
+            "urlSuccess" => $this->get_return_url($order),
+            "urlFailed" => $order->get_cancel_order_url(),
+            "urlNotification" => $urltienda,
+            "serviceDate" => $datetime->format('Y-m-d'),
+            "directPayment" => true,
+            "client" => $arraycliente,
+            "favorite" => false,
+            "paymentMethods"
+        );
+        $selectedMethod = get_post_meta( $order_id, 'tropipay_payment_method', true );
+        switch($selectedMethod) {
+            case 'card':
+                $datos["paymentMethods"]=array("EXT");
+                break;
+            case 'balance':
+                $datos["paymentMethods"]=array("TPP");
+                break;
+        }
+        $paylink = $srv->createPaylink($datos);
+        $shorturl=$paylink['data']['shortUrl'];
+        
+        $paymenturl=$paylink['data']['paymentUrl'];
 
-        curl_close($curl);
+        //$paymenturl=$paylink['data']['rawUrlPayment'];
 
-        if ($err) {
-        echo "cURL Error #:" . $err;
+        $action = $shorturl;
+
+
+        if($tropimethod==="embed" && $selectedMethod==='card') {
+            return '<iframe style="border:none;width:100%;height:500px;" src="' . $paymenturl  .'"></iframe> <a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>';
         }
         else {
-            $character = json_decode($response);
-            $tokent=$character->token;
-            $datetime = new DateTime('today');
-            //echo $datetime->format('Y-m-d');
-            //$customerprofiled=commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
-            $arraycliente["name"]=$order->get_billing_first_name();
-            $arraycliente["lastName"]=$order->get_billing_last_name();
-            $arraycliente["address"]=$order->get_billing_address_1() . ", " . $order->get_billing_city() . ", " . $order->get_billing_postcode();
-            $arraycliente["phone"]=$order->get_billing_phone();
-            $arraycliente["email"]=$order->get_billing_email();
-            $arraycliente["countryId"] = 1;
-            $arraycliente["countrySlug"] = $order->get_billing_country();
-            $arraycliente["termsAndConditions"] = true;
-
-            $moneda=$this->get_option('tropipaymoneda');
-
-            $datos=array(
-              "reference" => $numpedido,
-              "concept" => __('Order #: ') . $order->get_id(),
-              "description" => " ",
-              "amount" => $transaction_amount,
-              "currency" => $moneda,
-              "singleUse" => true,
-              "reasonId" => 4,
-              "expirationDays" => $this->get_option('tropiexpirationdays'),
-              "lang" => "es",
-              "urlSuccess" => $this->get_return_url($order),
-              //"urlFailed" => str_replace("&","%26",$order->get_cancel_order_url()),
-              "urlFailed" => $order->get_cancel_order_url(),
-              "urlNotification" => $urltienda,
-              "serviceDate" => $datetime->format('Y-m-d'),
-              "directPayment" => true,
-              "client" => $arraycliente,
-              "notifyClientByEmail" => $tropinotifyclient
-            );
-
-            $data_string2 = json_encode($datos);
-
-
-
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-              CURLOPT_URL => $tropipay_server . "/api/paymentcards/",
-              CURLOPT_RETURNTRANSFER => true,
-              CURLOPT_ENCODING => "",
-              CURLOPT_MAXREDIRS => 10,
-              CURLOPT_TIMEOUT => 30,
-              CURLOPT_CUSTOMREQUEST => "POST",
-              CURLOPT_POSTFIELDS => $data_string2,
-              CURLOPT_HTTPHEADER => array(
-                "authorization: Bearer " . $tokent,
-                "content-type: application/json"
-              ),
-            ));
-
-            $response = curl_exec($curl);
-            $err = curl_error($curl);
-
-            curl_close($curl);
-
-            if ($err) {
-              echo "cURL Error #:" . $err;
-            } else {
-              //echo $response;
-              $character = json_decode($response);
-              $shorturl=$character->shortUrl;
-              $paymenturl=$character->paymentUrl;
-
-              $action = $shorturl;
-              //$form['#action'] = $shorturl;
-
-            }
-
-            if($tropimethod=="embed") {
-                return '<iframe style="border:none;with:100%;height:450px;" src="' . urldecode($paymenturl)  .'"></iframe> <a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>';
-            }
-            else {
-                //Formulario que envía los datos del pedido y la redirección al formulario de acceso al TPV
-                return '<form action="'.$action.'" method="GET" id="tropipay_payment_form">'.
-                        '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="'.__('Pagar con Tarjeta', 'tropipay').'" />'.
+            return '<h4>Espere, por favor</h4><form action="'.$action.'" method="GET" id="tropipay_payment_form" style="display:none;">'.
+                        '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="'.__('Pagar con Tropipay', 'tropipay').'" />'.
                         '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>
-                    </form>';
-            }
+                    </form><script>document.getElementById("tropipay_payment_form").submit();</script>';
         }
+        
     }
 
     function tropipay_payments_get_order_id($num) {
@@ -414,26 +434,45 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $logActivo=$this->tropipayactivar_log;
 		$estado=$this->tropipayestado;
 
-        $strrrr=file_get_contents('php://input');
-        $ppd=json_decode($strrrr,true);
-        $ds_amount = $ppd["data"]["amount"];
-        $ds_order = $ppd["data"]["reference"];
-        $ds_bankordercode = $ppd["data"]["bankOrderCode"];
-        $ds_amount = $ppd["data"]["originalCurrencyAmount"];
-        $ds_merchant_usermail = $this->tropipaymail;
-        $ds_merchant_userpassword = $this->tropipaypassw;
-        $ds_reference=$ppd["data"]["reference"];
-        $ds_currency = $ppd["data"]["currency"];
-        $firma_remota = $ppd["data"]["signature"];
-        $firma_local=hash('sha256', $ds_bankordercode . $ds_merchant_usermail . sha1($ds_merchant_userpassword) . $ds_amount);
-        if($firma_local==$firma_remota) {
-          $order_id = $this->tropipay_payments_get_order_id($ds_reference);
-          if ($order_id) {
+        $responsej=file_get_contents('php://input');
+        $response=json_decode($responsej,true);
+        $ds_amount = $response["data"]["amount"];
+        $ds_order = $response["data"]["reference"];
+        $ds_bankordercode = $response["data"]["bankOrderCode"];
+        $ds_amount = $response["data"]["originalCurrencyAmount"];
+        $ds_merchant_clientid = $this->get_option('clientid');
+        $ds_merchant_clientsecret = $this->get_option('clientsecret');
+        $ds_reference=$response["data"]["reference"];
+        $ds_currency = $response["data"]["currency"];
+
+        $order_id = $this->tropipay_payments_get_order_id($ds_reference);
+        if ($order_id) {
             $order = new WC_Order($order_id);
-            if($ppd["status"]=="OK") {
+        }
+        else {
+            $this->tropipayescribirLog_wc($this->idLog." -- "."No se ha encontrado el pedido",$logActivo);
+            wp_die( '<img src="'.home_url().'/wp-content/plugins/tropipay/pages/assets/images/cross.png" alt="Desactivado" title="Desactivado" />
+            Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
+            return;
+        }
+
+        $transaction_amount = (int) str_replace(',', '', number_format($order->get_total() * 100, 2));
+        if($transaction_amount != abs($ds_amount)) {
+            $this->tropipayescribirLog_wc($this->idLog." -- "."No coincide el amount",$logActivo);
+            wp_die( '<img src="'.home_url().'/wp-content/plugins/tropipay/pages/assets/images/cross.png" alt="Desactivado" title="Desactivado" />
+            Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
+            return;
+        }
+        $firma_remota = $response["data"]["signaturev2"];
+        $firma_local=hash('sha256', $ds_bankordercode . $ds_merchant_clientid . $ds_merchant_clientsecret . $ds_amount);
+        $this->tropipayescribirLog_wc($this->idLog." -- "."firma remota: " .$firma_remota ,$logActivo);
+        $this->tropipayescribirLog_wc($this->idLog." -- "."firma local: " .$firma_local ,$logActivo);
+        $this->tropipayescribirLog_wc($this->idLog." -- "."response: " .$responsej ,$logActivo);
+        
+        if($firma_local==$firma_remota) {  
+            if($response["status"]=="OK") {
                 $order->update_status($estado,__( 'Awaiting Tropipay payment', 'woocommerce' ));
-                //$this->log->add( 'redsys', 'Operación finalizada. PEDIDO ACEPTADO ');
-                $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. PEDIDO ACEPTADO",$logActivo);
+                $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. Respuesta del tpv: OK. PEDIDO ACEPTADO",$logActivo);
                 $order->reduce_order_stock();
                 add_post_meta( $order_id, 'reference', $ds_order );
                 add_post_meta( $order_id, 'bankOrderCode', $ds_bankordercode );
@@ -441,34 +480,39 @@ class WC_Tropipay extends WC_Payment_Gateway {
                 WC()->cart->empty_cart();
             }
             else {
-                $order->update_status('cancelled',__( 'Awaiting Tropipay payment', 'woocommerce' ));
-                WC()->cart->empty_cart();
-                //$this->log->add( 'redsys', 'Operación finalizada. PEDIDO CANCELADO ');
-                $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. PEDIDO CANCELADO",$logActivo);
+                //$order->update_status('cancelled',__( 'Awaiting Tropipay payment', 'woocommerce' ));
+                //WC()->cart->empty_cart();
+                $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. Respuesta del tpv: KO. PEDIDO CANCELADO",$logActivo);
             }
-          }
-          else {
-                wp_die( '<img src="'.home_url().'/wp-content/plugins/redsys/pages/assets/images/cross.png" alt="Desactivado" title="Desactivado" />
-                Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
-          }
-            
         }
         else {
-            wp_die( '<img src="'.home_url().'/wp-content/plugins/redsys/pages/assets/images/cross.png" alt="Desactivado" title="Desactivado" />
+            $this->tropipayescribirLog_wc($this->idLog." -- "."No coinciden las firmas",$logActivo);
+            wp_die( '<img src="'.home_url().'/wp-content/plugins/tropipay/pages/assets/images/cross.png" alt="Desactivado" title="Desactivado" />
                 Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
         }
     }
 
-    function receipt_page( $order ) {
+    function receipt_page_tropipay( $order ) {
+        if( get_post_meta( $order, 'tropipay_payment_receipt', true ) ) 
+            return; // Exit if already processed
+        add_post_meta( $order, 'tropipay_payment_receipt', 'si' );
         $logActivo=$this->tropipayactivar_log;
-        $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso a la página de confirmación de la opción de pago con tarjeta de REDSYS",$logActivo);
-        if($this->get_option('tropimethod')!='embed') {
-            echo '<p>'.__('Gracias por su pedido, por favor pulsa el botón para pagar con Tarjeta.', 'redsys').'</p>';
+        $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso a la página de confirmación de la opción de pago con tarjeta de Tropipay",$logActivo);
+        
+        $selectedMethod = get_post_meta( $order, 'tropipay_payment_method', true );
+        
+        if($this->get_option('tropimethod')!='embed' || $selectedMethod === 'balance') {
+            echo '<p>'.__('Gracias por su pedido, por favor espera mientras le redireccionamos a la plataforma de pago. <img src="'.home_url().'/wp-content/plugins/tropipay/pages/assets/images/loading.gif" alt="Desactivado" title="Desactivado" />', 'tropipay-woo').'</p>';
         }
         else {
-            echo '<p>'.__('Gracias por su pedido, por favor introduzca los datos de su Tarjeta.', 'redsys').'</p>';
+            if($selectedMethod) {
+                echo '<p>'.__('Gracias por su pedido, por favor introduzca los datos de su Tarjeta.', 'tropipay-woo').'</p>';
+            }
         }
-        echo $this -> generate_redsys_form($order);
+        if($selectedMethod) {
+            echo $this -> generate_tropipay_form($order);
+        }
+        
     }
 
     function tropipayescribirLog_wc($texto,$activo) {
@@ -477,9 +521,6 @@ class WC_Tropipay extends WC_Payment_Gateway {
             $this->log->add( 'tropipay', $texto."\r\n");
         }
     }
-
-
-
 }
 
     function tropipay_get_bankordercode($order_id) {
