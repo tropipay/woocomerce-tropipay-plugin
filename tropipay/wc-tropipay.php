@@ -43,7 +43,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
 
         $this->title              = $this->get_option( 'title' );
         $this->description        = $this->get_option( 'description' );
-
+        
         // Get settings
         $this->tropipayentorno            = $this->get_option( 'tropipayentorno' );
         $this->tropipaymail             = $this->get_option( 'tropipaymail' );
@@ -285,7 +285,42 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         'no' => __( 'No', 'woocommerce' ),
                         'si' => __( 'Si', 'woocommerce' )
                     )
-                )
+                    ),
+                'tropipaydiscountpercent' => array(
+                    'title'       => __('Porciento de descuento que desea aplicar', 'woocomemerce'),
+                    'type'        => 'checkbox',
+                    'description' => __('Habilitar, si deseamos aplicar un descuento al pago del cliente <br> cuando utilice tropipay como método de pago'),
+                    'defult'      => 'no',
+                    'desc_tip'    => true,
+                    'class'       => 'tropipaycheckbox',
+                    'label'       => 'Activar descuento'     
+
+                ),
+                'tropipaydiscountpercentcuantity' => array(
+                    'title' => __('Valor del porciento de descuento','woocommerce'),
+                    'type'  => 'text',
+                    'description' => __('Valor del pociento de descueto que se desea aplicar a la cuenta del cliente. <br> Este porciento será aplicado al monto final de la cuenta del cliente.'),
+                    'default' => '0',
+                    'desc_tip' => true,
+                    'class' =>  "tropipayinput",
+                     ),
+                'tropipaydiscountamount' => array(
+                    'title'  => __('Aplicar valor fijo de descuento','woocommerce'),
+                    'type'   => 'checkbox',
+                    'description' => __('Habilitar si deseamos aplicar un descuento fijo a la cuenta del cliente <br> cuando utilice tropipay como método de pago'),
+                    'default' => 'no',
+                    'desc_tip' => true,
+                    'class' => 'tropipaycheckbox',
+                    'laber' => 'Activar descuento de valor fijo'
+                ),
+                'tropipaydiscountamountcuantity' => array(
+                    'title' => __('Valor fijo a descontar','woocommerce'),
+                    'type'  => 'text',
+                    'description' => __('Valor fijo que se desea descontar a la cuenta del cliente.'),
+                    'default' => '0',
+                    'desc_tip' => true,
+                    'class' =>  "tropipayinput",
+                     )
 			   	);
 				
 				$tmp_estados=wc_get_order_statuses();
@@ -293,6 +328,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
 					$this->form_fields['tropipayestado']['options'][substr($est_id,3)]=$est_na;
 				}
     }
+
+   
 
     function process_payment( $order_id ) {
         global $woocommerce;

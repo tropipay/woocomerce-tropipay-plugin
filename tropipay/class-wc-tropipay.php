@@ -82,7 +82,7 @@ function tropipay_apply_payment_gateway_fee($cart) {
     $tropipay_payment_method = $post_data_array['tropipay_payment_method'];
     if($metodo_pago->tropipayaddFees==='si') {
       if($tropipay_payment_method === 'card' || $_POST["tropipay_payment_method"] === 'card') {
-          $label = __( 'Comisión pago', 'tropipay-woo' );
+          /*$label = __( 'Comisión pago', 'tropipay-woo' );*/
           $amount = round(floatval($calculateamount / floatval(1 - (floatval($metodo_pago->tropipayfeecardpercent)/100))), 2) + floatval($metodo_pago->tropipayfeecardfixed) - $calculateamount;
           WC()->cart->add_fee( $label, $amount, true, 'standard' );
       }
@@ -110,7 +110,8 @@ function tropipay_script() {
       });
       $('body').on('click','.checkout #tropipay_payment_method_balance',function(){
         $('body').trigger('update_checkout');
-      });        
+      });
+             
     });
 
     </script>
