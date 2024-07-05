@@ -102,10 +102,10 @@ class WC_Tropipay extends WC_Payment_Gateway {
       //Agregando los atributos requiere  a las opciones que asi lo necesitan
       //y validaciones en la entrada
       //Esto tengo que pasarlo despues para un doc aparte con todo el javascript
-      function add_attribs_script() {
+    function add_attribs_script() {
         ?>
         <script>
-            document.addEventListener("DOMContentLoaded",function(){
+            /*document.addEventListener("DOMContentLoaded",function(){
 
                 var txtrequire=document.getElementsByClassName("tropipayinput");
                     Array.prototype.forEach.call(txtrequire, function(txt) {
@@ -115,10 +115,10 @@ class WC_Tropipay extends WC_Payment_Gateway {
                                 txt.value=txt.value.substring(0,txt.value.length-1);
                             }
                                                     
-                         })
+                         });
                 });               
                                             
-            });
+            });*/
     
         </script>
       <?php
@@ -349,7 +349,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
 			   	);
 
                 //Agregando los atributos a los campos requieridos
-                $this->add_attribs_script();
+                //$this->add_attribs_script();
                 
 				
 				$tmp_estados=wc_get_order_statuses();
@@ -357,12 +357,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
                	foreach($tmp_estados as $est_id=>$est_na){
                     $this->form_fields['tropipayestado']['options'][substr($est_id,3)]=$est_na;
 				}
-    }
-
-  
-
-   
-
+    
+            }
     function process_payment( $order_id ) {
         global $woocommerce;
         $order = new WC_Order($order_id);
@@ -429,7 +425,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $arraycliente["address"]=$order->get_billing_address_1() . ", " . $order->get_billing_city() . ", " . $order->get_billing_postcode();
         if($order->get_billing_phone()) {
             $arraycliente["phone"]=$order->get_billing_phone();
-        } else {
+        }
+         else {
             $arraycliente["phone"]=$order->get_shipping_phone();
         }
         $arraycliente["email"]=$order->get_billing_email();
@@ -473,6 +470,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                 break;
         }
         $paylink = $srv->createPaylink($datos);
+        //var_dump($datos);
         $shorturl=$paylink['data']['shortUrl'];
         
         $paymenturl=$paylink['data']['paymentUrl'];
@@ -596,8 +594,9 @@ class WC_Tropipay extends WC_Payment_Gateway {
             $this->log->add( 'tropipay', $texto."\r\n");
         }
     }
-}
+
 
     function tropipay_get_bankordercode($order_id) {
         return get_post_meta( $order_id, 'bankOrderCode', true );
     }
+}
