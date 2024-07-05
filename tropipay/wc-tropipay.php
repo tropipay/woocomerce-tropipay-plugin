@@ -99,6 +99,31 @@ class WC_Tropipay extends WC_Payment_Gateway {
         echo '</div>';
     }*/
 
+      //Agregando los atributos requiere  a las opciones que asi lo necesitan
+      //y validaciones en la entrada
+      //Esto tengo que pasarlo despues para un doc aparte con todo el javascript
+      function add_attribs_script() {
+        ?>
+        <script>
+            document.addEventListener("DOMContentLoaded",function(){
+
+                var txtrequire=document.getElementsByClassName("tropipayinput");
+                    Array.prototype.forEach.call(txtrequire, function(txt) {
+                         txt.setAttribute("required", "");
+                         txt.addEventListener("input",()=>{
+                            if(!/^\d*$/.test(txt.value)){
+                                txt.value=txt.value.substring(0,txt.value.length-1);
+                            }
+                                                    
+                         })
+                });               
+                                            
+            });
+    
+        </script>
+      <?php
+      }
+
     function init_form_fields() {
         global $woocommerce;
 
@@ -300,7 +325,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                     'title' => __('Valor del porciento de descuento','woocommerce'),
                     'type'  => 'text',
                     'description' => __('Valor del pociento de descueto que se desea aplicar a la cuenta del cliente. <br> Este porciento será aplicado al monto final de la cuenta del cliente.'),
-                    'default' => '0',
+                    'default' => 0,
                     'desc_tip' => true,
                     'class' =>  "tropipayinput",
                      ),
@@ -317,17 +342,24 @@ class WC_Tropipay extends WC_Payment_Gateway {
                     'title' => __('Valor fijo a descontar','woocommerce'),
                     'type'  => 'text',
                     'description' => __('Valor fijo que se desea descontar a la cuenta del cliente.'),
-                    'default' => '0',
+                    'default' => 0,
                     'desc_tip' => true,
                     'class' =>  "tropipayinput",
-                     )
+                    )
 			   	);
+
+                //Agregando los atributos a los campos requieridos
+                $this->add_attribs_script();
+                
 				
 				$tmp_estados=wc_get_order_statuses();
-				foreach($tmp_estados as $est_id=>$est_na){
-					$this->form_fields['tropipayestado']['options'][substr($est_id,3)]=$est_na;
+
+               	foreach($tmp_estados as $est_id=>$est_na){
+                    $this->form_fields['tropipayestado']['options'][substr($est_id,3)]=$est_na;
 				}
     }
+
+  
 
    
 
@@ -466,6 +498,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
       return intval(substr($num,0,-4));
     }
 
+    //Verificar respuesta del servidor para evitar suplantacion
     function check_rds_response() {
         $this->idLog = $this->generateIdLog();
         $logActivo=$this->tropipayactivar_log;
@@ -483,6 +516,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $ds_currency = $response["data"]["currency"];
 
         $order_id = $this->tropipay_payments_get_order_id($ds_reference);
+
+        //Se verifica el id de la orden que viene en la respues
         if ($order_id) {
             $order = new WC_Order($order_id);
         }
@@ -493,6 +528,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
             return;
         }
 
+        //Se verifica que coincidan las cantidades a pagar
         $transaction_amount = (int) str_replace(',', '', number_format($order->get_total() * 100, 2));
         if($transaction_amount != abs($ds_amount)) {
             $this->tropipayescribirLog_wc($this->idLog." -- "."No coincide el amount",$logActivo);
@@ -500,6 +536,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
             Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
             return;
         }
+
+        //Validacion de firmas y registro del log para evidencia
         $firma_remota = $response["data"]["signaturev2"];
         $firma_local=hash('sha256', $ds_bankordercode . $ds_merchant_clientid . $ds_merchant_clientsecret . $ds_amount);
         $this->tropipayescribirLog_wc($this->idLog." -- "."firma remota: " .$firma_remota ,$logActivo);
@@ -510,7 +548,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
             if($response["status"]=="OK") {
                 $order->update_status($estado,__( 'Awaiting Tropipay payment', 'woocommerce' ));
                 $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. Respuesta del tpv: OK. PEDIDO ACEPTADO",$logActivo);
-                $order->reduce_order_stock();
+                $order->reduce_order_stock();//Verificar si se puede actualizar esto a la par del estado
                 add_post_meta( $order_id, 'reference', $ds_order );
                 add_post_meta( $order_id, 'bankOrderCode', $ds_bankordercode );
                 // Remove cart

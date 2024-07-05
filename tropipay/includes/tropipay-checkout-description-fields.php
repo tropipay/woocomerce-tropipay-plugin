@@ -9,6 +9,8 @@ add_action('woocommerce_checkout_process', 'tropipay_description_fields_validati
 add_action('woocommerce_checkout_update_order_meta', 'tropipay_checkout_update_order_meta', 1, 1);
 #add_action( 'woocommerce_order_item_meta_end', 'tropipay_order_item_meta_end', 10, 3 );
 
+
+/// Verificamos si estan activados los descuentos y se le notifica al usuario para insentivar su uso
 function tropipay_change_name_gateway($title, $id_gateway)
 {
 
@@ -88,14 +90,14 @@ function tropipay_description_fields($description, $payment_id)
     }
 
     if ($metodo_pago->settings['tropipaydiscountpercent'] == 'yes') {
-        echo '<br>Se le aplicará un ' . $metodo_pago->settings['tropipaydiscountpercentcuantity'] . '% de <b>Descuento</b> a su cuenta final';
+        echo '<p>Se le aplicará un ' . $metodo_pago->settings['tropipaydiscountpercentcuantity'] . '% de <b>Descuento</b> a su cuenta final</p>';
     }
     if ($metodo_pago->settings['tropipaydiscountamount'] == 'yes') {
-        echo '<br>Se le aplicara un <b>Descuento</b> fijo de ' . $metodo_pago->settings['tropipaydiscountamountcuantity'];
+        echo '<p>Se le aplicara un <b>Descuento</b> fijo de ' . $metodo_pago->settings['tropipaydiscountamountcuantity'];
         if ($metodo_pago->settings['tropipaymoneda'] == 'AUTO')
-            echo ' USD';
+            echo ' USD</p>';
         else
-            echo ' ' . $metodo_pago->settings['tropipaymoneda'];
+            echo ' ' . $metodo_pago->settings['tropipaymoneda'].'</p>';
     }
 
 
