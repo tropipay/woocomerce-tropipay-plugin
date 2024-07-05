@@ -1,0 +1,11 @@
+/*Directorio a ignorar */
+
+*/
+
+/*Archivos a ignorar */
+*.php
+
+/*Directorios a seguir */
+
+!wp-content/plugins/tropipay/
+
