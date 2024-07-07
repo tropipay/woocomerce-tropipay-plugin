@@ -1,7 +1,5 @@
 <?php
 
-use Elementor\Settings;
-
 add_filter('woocommerce_gateway_description', 'tropipay_description_fields', 20, 2);
 add_filter('woocommerce_gateway_title', 'tropipay_change_name_gateway', 10, 2);
 
@@ -64,6 +62,10 @@ function tropipay_description_fields($description, $payment_id)
 {
     global $woocommerce;
 
+    /*echo '<p style="background-color:yellow;"> ';
+    var_dump($woocommerce->cart);
+    echo '</p>';*/
+
     if ('tropipay' !== $payment_id) {
         return $description;
     }
@@ -97,7 +99,7 @@ function tropipay_description_fields($description, $payment_id)
         if ($metodo_pago->settings['tropipaymoneda'] == 'AUTO')
             echo ' USD</p>';
         else
-            echo ' ' . $metodo_pago->settings['tropipaymoneda'].'</p>';
+            echo ' ' . $metodo_pago->settings['tropipaymoneda'] . '</p>';
     }
 
 

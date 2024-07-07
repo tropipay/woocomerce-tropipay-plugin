@@ -86,7 +86,7 @@ function tropipay_apply_payment_gateway_fee($cart)
     $tropipay_payment_method = $post_data_array['tropipay_payment_method'];
     if ($metodo_pago->tropipayaddFees === 'si') {
       if ($tropipay_payment_method === 'card' || $_POST["tropipay_payment_method"] === 'card') {
-        /*$label = __( 'Comisión pago', 'tropipay-woo' );*/
+        $label = __('Comisión pago', 'tropipay-woo');
         $amount = round(floatval($calculateamount / floatval(1 - (floatval($metodo_pago->tropipayfeecardpercent) / 100))), 2) + floatval($metodo_pago->tropipayfeecardfixed) - $calculateamount;
         WC()->cart->add_fee($label, $amount, true, 'standard');
       }
@@ -110,19 +110,33 @@ function tropipay_script()
 ?>
   <script>
     jQuery(document).ready(function($) {
+
       $('body').on('click', '.checkout #tropipay_payment_method_card', function() {
         $('body').trigger('update_checkout');
       });
+
       $('body').on('click', '.checkout #tropipay_payment_method_balance', function() {
         $('body').trigger('update_checkout');
       });
 
+
+      //Check if after the user select tropipay method, changes his/her choice
+      $(document.body).on('change', 'input[name="payment_method"]', function() {
+        if ($(this).val() !== 'tropipay') {
+          $('body').trigger('update_checkout');
+        }
+
+      });
     });
   </script>
 <?php
 }
 
 add_action('woocommerce_after_checkout_form', 'tropipay_script');
+
+
+
+
 
 function add_attribs_script($hook)
 {
@@ -147,7 +161,6 @@ function add_attribs_script($hook)
     });
   </script>
 <?php
-  echo "function ready";
 }
 //Engancho el script solo en la pagina de administracion
 add_action('admin_enqueue_scripts', 'add_attribs_script');
