@@ -22,8 +22,6 @@
  * Tropipay
  */
 
-use Automattic\WooCommerce\Blocks\BlockTypes\Cart;
-use Yoast\WP\Lib\Migrations\Constants;
 
 /**
  * Plugin Name: Tropipay WooCommerce
