@@ -66,10 +66,46 @@ class WC_Tropipay extends WC_Payment_Gateway
         // Actions
         add_action('woocommerce_receipt_tropipay', array($this, 'receipt_page_tropipay'));
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'tropipay_coupons_check'));
         //Payment listener/API hook
         add_action('woocommerce_api_wc_tropipay', array($this, 'check_rds_response'));
         add_action('wp_enqueue_scripts', [$this, 'payment_scripts']);
     }
+
+    function tropipay_coupons_check()
+    {
+
+        $options = get_option('woocommerce_tropipay_settings');
+
+        if ($options['tropipaydiscountpercent'] == 'yes') {
+
+            $coupon_id = $options['tropipaydiscountcouponcaption'] . 'percent_ofer';
+            $discount_type = 'percent';
+
+            //Create discoun percent coupon
+            $coupon_percent = new WC_Coupon();
+            $coupon_percent->set_code($coupon_id);
+            $coupon_percent->set_discount_type($discount_type);
+            $coupon_percent->set_amount(intval($options['tropipaydiscountpercentcuantity']));
+            $coupon_percent->set_individual_use(false);
+            $coupon_percent->save();
+        }
+
+        if ($options['tropipaydiscountamount'] == 'yes') {
+
+            $coupon_id = $options['tropipaydiscountcouponcaption'] . 'fixed_ofer';
+            $discount_type = 'fixed_cart';
+
+            //Create discoun fixed coupon
+            $coupon_fixed = new WC_Coupon();
+            $coupon_fixed->set_code($coupon_id);
+            $coupon_fixed->set_discount_type($discount_type);
+            $coupon_fixed->set_amount(intval($options['tropipaydiscountamountcuantity']));
+            $coupon_fixed->set_individual_use(false);
+            $coupon_fixed->save();
+        }
+    }
+
 
     function generateIdLog()
     {
@@ -87,23 +123,6 @@ class WC_Tropipay extends WC_Payment_Gateway
         wp_register_style('tropipay_styles', plugins_url('pages/assets/css/tropipay.css', WC_TROPIPAY_MAIN_FILE));
         wp_enqueue_style('tropipay_styles');
     }
-
-    /*function payment_fields() {
-        global $woocommerce;
-        //echo '<label for="mi_metodo_pago_tipo_pago">Seleccione el tipo de pago:</label>';
-        echo '<div>';
-        echo '<input type="radio" id="mi_metodo_pago_tipo_pago_tarjeta" name="mi_metodo_pago_tipo_pago" value="tarjeta" required>';
-        echo '<label for="mi_metodo_pago_tipo_pago_tarjeta">Tarjeta de crédito</label>';
-        echo '</div>';
-        echo '<div>';
-        echo '<input type="radio" id="mi_metodo_pago_tipo_pago_balance" name="mi_metodo_pago_tipo_pago" value="balance" required>';
-        echo '<label for="mi_metodo_pago_tipo_pago_balance">Pagar con balance de TropiPay</label>';
-        echo '</div>';
-    }*/
-
-    //Agregando los atributos requiere  a las opciones que asi lo necesitan
-    //y validaciones en la entrada
-    //Esto tengo que pasarlo despues para un doc aparte con todo el javascript
 
 
     function init_form_fields()
@@ -307,7 +326,7 @@ class WC_Tropipay extends WC_Payment_Gateway
             'tropipaydiscountpercentcuantity' => array(
                 'title' => __('Valor del porciento de descuento', 'woocommerce'),
                 'type'  => 'text',
-                'description' => __('Valor del pociento de descueto que se desea aplicar a la cuenta del cliente. <br> Este porciento será aplicado al monto final de la cuenta del cliente.'),
+                'description' => __('Valor del pociento de descueto que se desea aplicar a la cuenta del cliente. <br> Este porciento será aplicado al monto final de la cuenta del cliente.', 'woocommerce'),
                 'default' => 0,
                 'desc_tip' => true,
                 'class' =>  "tropipayinput",
@@ -328,7 +347,14 @@ class WC_Tropipay extends WC_Payment_Gateway
                 'default' => 0,
                 'desc_tip' => true,
                 'class' =>  "tropipayinput",
-            )
+            ),
+            'tropipaydiscountcouponcaption' => array(
+                'title' => __('Nombre para los cupones descuento', 'woocommerce'),
+                'type'  => 'text',
+                'description' => __('Nombre personalizado para el/los cupon/es de descuentos que seran aplicados por el metodo de pago de Tropipay', 'woocommerce'),
+                'default' => 'Tropipay',
+                'desc_tip' => true,
+            ),
         );
 
 

@@ -22,6 +22,8 @@
  * Tropipay
  */
 
+use Yoast\WP\Lib\Migrations\Constants;
+
 /**
  * Plugin Name: Tropipay WooCommerce
  * Plugin URI: https://www.tropipay.com/
@@ -63,6 +65,7 @@ function anadir_pago_woocommerce_tropipay($methods)
 function tropipay_apply_payment_gateway_fee($cart)
 {
   $totals = $cart->get_totals();
+
   $calculateamount = $totals["cart_contents_total"] + $totals["cart_contents_tax"];
   $payment_method = WC()->session->get('chosen_payment_method');
 
@@ -79,9 +82,12 @@ function tropipay_apply_payment_gateway_fee($cart)
   // Only apply the fee if the payment gateway is PayPal
   // Note that you might need to check this slug, depending on the PayPal gateway you're using
   parse_str($posted_data, $post_data_array);
+  $options = get_option('woocommerce_tropipay_settings');
   $payment_method = $post_data_array['payment_method'];
   if ($payment_method == 'tropipay' && $posted_data) {
+
     $metodo_pago = new WC_Tropipay;
+
     // parse_str($posted_data, $post_data_array);
     $tropipay_payment_method = $post_data_array['tropipay_payment_method'];
     if ($metodo_pago->tropipayaddFees === 'si') {
@@ -95,6 +101,20 @@ function tropipay_apply_payment_gateway_fee($cart)
         $amount = floatval($calculateamount / floatval(1 - (floatval($metodo_pago->tropipayfeebalancepercent) / 100))) + floatval($metodo_pago->tropipayfeebalancefixed) - $calculateamount;
         WC()->cart->add_fee($label, $amount, true, 'standard');
       }
+    }
+    //echo WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+    if ($options['tropipaydiscountpercent'] == 'yes' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') != 1) {
+      WC()->cart->apply_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+    }
+    if ($options['tropipaydiscountamount'] == 'yes' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') != 1) {
+      WC()->cart->apply_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
+    }
+  } else if ($payment_method == 'tropipay') {
+    if (WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') == 1) {
+      WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+    }
+    if (WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') == 1) {
+      WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
     }
   }
 }
@@ -122,9 +142,9 @@ function tropipay_script()
 
       //Check if after the user select tropipay method, changes his/her choice
       $(document.body).on('change', 'input[name="payment_method"]', function() {
-        if ($(this).val() !== 'tropipay') {
-          $('body').trigger('update_checkout');
-        }
+        //if ($(this).val() !== 'tropipay') {
+        $('body').trigger('update_checkout');
+        //}
 
       });
     });
@@ -135,10 +155,7 @@ function tropipay_script()
 add_action('woocommerce_after_checkout_form', 'tropipay_script');
 
 
-
-
-
-function add_attribs_script($hook)
+function tropipay_add_attribs_script($hook)
 {
   if ($hook != 'woocommerce_page_wc-settings')
     return;
@@ -163,4 +180,4 @@ function add_attribs_script($hook)
 <?php
 }
 //Engancho el script solo en la pagina de administracion
-add_action('admin_enqueue_scripts', 'add_attribs_script');
+add_action('admin_enqueue_scripts', 'tropipay_add_attribs_script');

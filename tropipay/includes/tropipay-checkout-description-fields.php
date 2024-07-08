@@ -52,7 +52,9 @@ function tropipay_checkout_form_get_field_values()
 
 function tropipay_description_fields_validation()
 {
+
     $field_values = tropipay_checkout_form_get_field_values();
+    var_dump($field_values);
     if (empty($field_values['tropipay_payment_method']) && $field_values['payment_method'] === 'tropipay') {
         wc_add_notice('Por favor seleccione la forma de pago con TropiPay', 'error');
     }
@@ -61,10 +63,6 @@ function tropipay_description_fields_validation()
 function tropipay_description_fields($description, $payment_id)
 {
     global $woocommerce;
-
-    /*echo '<p style="background-color:yellow;"> ';
-    var_dump($woocommerce->cart);
-    echo '</p>';*/
 
     if ('tropipay' !== $payment_id) {
         return $description;
