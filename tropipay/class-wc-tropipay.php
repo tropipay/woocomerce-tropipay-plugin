@@ -22,6 +22,7 @@
  * Tropipay
  */
 
+use Automattic\WooCommerce\Blocks\BlockTypes\Cart;
 use Yoast\WP\Lib\Migrations\Constants;
 
 /**
@@ -36,6 +37,7 @@ use Yoast\WP\Lib\Migrations\Constants;
 define('WC_TROPIPAY_MAIN_FILE', __FILE__);
 add_action('init', 'init_tropipay');
 add_action('plugins_loaded', 'load_tropipay');
+add_action('woocommerce_review_order_before_cart_contents', 'update_totals');
 
 function init_tropipay()
 {
@@ -65,6 +67,7 @@ function anadir_pago_woocommerce_tropipay($methods)
 function tropipay_apply_payment_gateway_fee($cart)
 {
   $totals = $cart->get_totals();
+  
 
   $calculateamount = $totals["cart_contents_total"] + $totals["cart_contents_tax"];
   $payment_method = WC()->session->get('chosen_payment_method');
@@ -108,6 +111,7 @@ function tropipay_apply_payment_gateway_fee($cart)
     }
     else if($options['tropipaydiscountpercent'] == 'no' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') == 1){
       WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+ 
     }
 
     if ($options['tropipaydiscountamount'] == 'yes' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') != 1) {
@@ -115,19 +119,30 @@ function tropipay_apply_payment_gateway_fee($cart)
     }
     else if( $options['tropipaydiscountamount'] == 'no' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') == 1 ){
       WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
+     
     }
 
     
   }
    else if ($payment_method != 'tropipay') {
-
     if (WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') == 1) {
       WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+      
     }
     if (WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') == 1) {
       WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
+
     }
   }
+
+}
+
+
+
+function update_totals() {
+    // Recalcula los totales del carrito
+    WC()->cart->calculate_totals();
+    
 }
 
 add_action('woocommerce_cart_calculate_fees', 'tropipay_apply_payment_gateway_fee');
