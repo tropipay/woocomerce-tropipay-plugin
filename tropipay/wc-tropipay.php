@@ -332,7 +332,7 @@ class WC_Tropipay extends WC_Payment_Gateway
                 'class' =>  "tropipayinput",
             ),
             'tropipaydiscountamount' => array(
-                'title'  => __('Aplicar valor fijo de descuento', 'woocommerce'),
+                'title'  => __('Activar valor fijo de descuento', 'woocommerce'),
                 'type'   => 'checkbox',
                 'description' => __('Habilitar si deseamos aplicar un descuento fijo a la cuenta del cliente <br> cuando utilice tropipay como método de pago'),
                 'default' => 'no',

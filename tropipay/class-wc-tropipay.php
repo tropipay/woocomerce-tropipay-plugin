@@ -102,14 +102,25 @@ function tropipay_apply_payment_gateway_fee($cart)
         WC()->cart->add_fee($label, $amount, true, 'standard');
       }
     }
-    //echo WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+    
     if ($options['tropipaydiscountpercent'] == 'yes' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') != 1) {
       WC()->cart->apply_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
     }
+    else if($options['tropipaydiscountpercent'] == 'no' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') == 1){
+      WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
+    }
+
     if ($options['tropipaydiscountamount'] == 'yes' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') != 1) {
       WC()->cart->apply_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
     }
-  } else if ($payment_method == 'tropipay') {
+    else if( $options['tropipaydiscountamount'] == 'no' && WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'fixed_ofer') == 1 ){
+      WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'fixed_ofer');
+    }
+
+    
+  }
+   else if ($payment_method != 'tropipay') {
+
     if (WC()->cart->has_discount($options['tropipaydiscountcouponcaption'] . 'percent_ofer') == 1) {
       WC()->cart->remove_coupon($options['tropipaydiscountcouponcaption'] . 'percent_ofer');
     }
