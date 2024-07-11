@@ -9,3 +9,7 @@
     background: url(../images/logoTropiPay.png) no-repeat left;
     background-size: contain;
 }
+
+.tropipay_oferta{
+    background-color: rgb(131, 233, 100);
+}
