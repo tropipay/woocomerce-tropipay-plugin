@@ -58,6 +58,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $this->tropipayfeebalancefixed = $this->get_option('tropipayfeebalancefixed');
         $this->tropipayshowfees = $this->get_option('tropipayshowfees');
         $this->tropipayshowlogo = $this->get_option('tropipayshowlogo');
+        $this->tropipaypaymentcardtype = $this->get_option('tropipaypaymentcardtype');
         
 
 
@@ -160,17 +161,6 @@ class WC_Tropipay extends WC_Payment_Gateway {
                                 'EUR' => __( 'EURO', 'woocommerce' ),
                                 'USD' => __( 'DOLAR', 'woocommerce' )
                         )
-                ),
-                'tropimethod' => array(
-                    'title'           => __( 'Método del formulario', 'woocommerce' ),
-                    'type'            => 'select',
-                    'description'     => __( 'Formulario embebido o redirección externa, para pagos con balance de TropiPay siempre será redirección', 'woocommerce'),
-                    'default'         => 'redirect',
-                    'desc_tip'        => true,
-                    'options'         => array(
-                        'redirect' => __('Redirección externa', 'woocommerce'),
-                        'embed' => __('Formulario embebido' , 'woocommerce')
-                    )
                 ),
                 'tropipaymentmethods' => array(
                     'title'            => __( 'Formas de pago', 'woocommerce' ),
@@ -285,6 +275,17 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         'no' => __( 'No', 'woocommerce' ),
                         'si' => __( 'Si', 'woocommerce' )
                     )
+                ),
+                'tropipaypaymentcardtype' => array(
+                    'title'       => __( 'Tipo de paymentcard', 'tropipay-woo' ),
+                    'type'        => 'select',
+                    'description' => __( 'Tipo de paymentcard.', 'tropipay-woo' ),
+                    'default'     => 1,
+                    'desc_tip'    => true,
+                    'options'     => array(
+                        1 => 'Normal',
+                        4 => 'Marketplace'
+                    )
                 )
 			   	);
 				
@@ -318,6 +319,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $entorno=$this->get_option('tropipayentorno');
         $tropimethod=$this->get_option('tropimethod');
         $tropipaymentmethods=$this->get_option('tropipaymentmethods');
+        $tropipaypaymentcardtype=$this->get_option('tropipaypaymentcardtype');
 
         $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso al formulario de pago con tarjeta de Tropipay",$logActivo);
 
@@ -376,6 +378,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $arraycliente["postCode"]=$order->get_billing_postcode();
         //$moneda=$this->get_option('tropipaymoneda');
         $datos=array(
+            "paymentcardType" => $tropipaypaymentcardtype,
             "reference" => $numpedido,
             "concept" => __('Order #: ') . $order->get_id(),
             "description" => " ",
@@ -406,22 +409,16 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $paylink = $srv->createPaylink($datos);
         $shorturl=$paylink['data']['shortUrl'];
         
-        $paymenturl=$paylink['data']['paymentUrl'];
+        //$paymenturl=$paylink['data']['paymentUrl'];
 
         //$paymenturl=$paylink['data']['rawUrlPayment'];
 
         $action = $shorturl;
 
-
-        if($tropimethod==="embed" && $selectedMethod==='card') {
-            return '<iframe style="border:none;width:100%;height:500px;" src="' . $paymenturl  .'"></iframe> <a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>';
-        }
-        else {
-            return '<h4>Espere, por favor</h4><form action="'.$action.'" method="GET" id="tropipay_payment_form" style="display:none;">'.
-                        '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="'.__('Pagar con Tropipay', 'tropipay').'" />'.
-                        '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>
-                    </form><script>document.getElementById("tropipay_payment_form").submit();</script>';
-        }
+        return '<h4>Espere, por favor</h4><form action="'.$action.'" method="GET" id="tropipay_payment_form" style="display:none;">'.
+                    '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="'.__('Pagar con Tropipay', 'tropipay').'" />'.
+                    '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancelar Pedido', 'tropipay').'</a>
+                </form><script>document.getElementById("tropipay_payment_form").submit();</script>';
         
     }
 
