@@ -486,8 +486,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
             Fallo en el proceso de pago.<br>Su pedido ha sido cancelado.' );
             return;
         }
-        $firma_remota = $response["data"]["signaturev2"];
-        $firma_local=hash('sha256', $ds_bankordercode . $ds_merchant_clientid . $ds_merchant_clientsecret . $ds_amount);
+        $firma_remota = $response["data"]["signaturev3"];
+        $firma_local=hash('sha256', $ds_bankordercode . $ds_merchant_clientid . sha1($ds_merchant_clientsecret) . $ds_amount);
         $this->tropipayescribirLog_wc($this->idLog." -- "."firma remota: " .$firma_remota ,$logActivo);
         $this->tropipayescribirLog_wc($this->idLog." -- "."firma local: " .$firma_local ,$logActivo);
         $this->tropipayescribirLog_wc($this->idLog." -- "."response: " .$responsej ,$logActivo);
