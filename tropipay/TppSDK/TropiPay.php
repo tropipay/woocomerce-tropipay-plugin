@@ -47,6 +47,21 @@ class TropiPay
         return $this->token;
     }
 
+    public function getProfile() {
+        if(!$this->token) {
+            $this->login($this->clientId, $this->clientSecret);
+        }
+        $url = $this->get('url') . $this->get('profile');
+        $res = $this->srv->get($url, array(), array(
+            "content-type: application/json",
+            "authorization: Bearer " . $this->token
+        ));
+        if($res && $res['error']){
+            $this->log($res['error']);
+        }
+        return $res;
+    }
+
     public function createPaylink($data){
         if(!$this->token) {
             $this->login($this->clientId, $this->clientSecret);

@@ -82,6 +82,31 @@ class WC_Tropipay extends WC_Payment_Gateway {
         return $result;
     }
 
+    function check_tropipay_merchant_status() {
+        try {
+            $clientid = $this->get_option('clientid');
+            $clientsecret = $this->get_option('clientsecret');
+            $entorno = $this->get_option('tropipayentorno');
+            
+            if(empty($clientid) || empty($clientsecret)) {
+                return false;
+            }
+
+            $environment = ($entorno == "Sandbox") ? "develop" : "production";
+            $srv = new TropiPay($clientid, $clientsecret, $environment);
+            
+            // Intentar obtener el perfil del merchant
+            $profile = $srv->getProfile();
+            
+            // Verificar si el merchant tiene el campo requerido
+            // Aquí debes reemplazar 'campo_requerido' con el nombre real del campo que necesitas verificar
+            return isset($profile['data']['options']['isMarketPlaceUser']) && $profile['data']['options']['isMarketPlaceUser'] === true;
+            
+        } catch(Exception $e) {
+            return false;
+        }
+    }
+
     function payment_scripts() {
         wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', WC_TROPIPAY_MAIN_FILE ));
 		wp_enqueue_style( 'tropipay_styles' );
@@ -285,7 +310,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
                     'options'     => array(
                         1 => 'Normal',
                         4 => 'Marketplace'
-                    )
+                    ),
+                    'class'       => $this->check_tropipay_merchant_status() ? '' : 'hidden'
                 )
 			   	);
 				

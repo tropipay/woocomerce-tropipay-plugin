@@ -8,14 +8,21 @@ class HttpClient
      * @param       array $params
      * @return      HTTP-Response body or an empty string if the request fails or is empty
      */
-    public function get($url, array $params) {
+    public function get($url, array $params, array $headers=null) {
         $query = http_build_query($params); 
-        $ch    = curl_init($url.'?'.$query);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, false);
-        $response = curl_exec($ch);
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => $url.'?'.$query,
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_CUSTOMREQUEST => "GET",
+          CURLOPT_HTTPHEADER => $headers
+        ));
+        $response = curl_exec($curl);
         $error = curl_error($curl);
-        curl_close($ch);
+        curl_close($curl);
         if(!$error) {
             $response = json_decode($response, true);
         }

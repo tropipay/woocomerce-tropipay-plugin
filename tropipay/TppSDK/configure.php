@@ -9,5 +9,6 @@ $OPT['url']['default'] = $OPT['url']['develop'];
 $OPT['login']['default'] = '/api/v3/access/token';
 $OPT['paylink']['default'] = '/api/v3/paymentcards';
 $OPT['loadpayments']['default'] = '/api/loadPayments';
+$OPT['profile']['default'] = '/api/v3/users/profile';
 
 return $OPT;
