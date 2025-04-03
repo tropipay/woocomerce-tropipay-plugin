@@ -348,7 +348,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $entorno=$this->get_option('tropipayentorno');
         $tropimethod=$this->get_option('tropimethod');
         $tropipaymentmethods=$this->get_option('tropipaymentmethods');
-        $tropipaypaymentcardtype=$this->get_option('tropipaypaymentcardtype');
+        $tropipaypaymentcardtype = $this->get_option('tropipaypaymentcardtype', 1);
 
         $this->tropipayescribirLog_wc($this->idLog." -- "."Acceso al formulario de pago con tarjeta de Tropipay",$logActivo);
 
