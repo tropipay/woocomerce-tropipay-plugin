@@ -50,6 +50,10 @@ function tropipay_description_fields( $description, $payment_id ) {
 
     $tropipaymentmethods = $metodo_pago->get_option('tropipaymentmethods');
 
+    // Initialize fee labels to avoid undefined variable warnings
+    $labelcardextrafee = '';
+    $labelbalanceextrafee = '';
+
     if($metodo_pago->tropipayaddFees==='si' && $metodo_pago->tropipayshowfees==='si') {
         if(floatval($metodo_pago->tropipayfeecardpercent)>0) {
             $labelcardextrafee= ' ' . $metodo_pago->tropipayfeecardpercent . '%';

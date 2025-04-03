@@ -26,7 +26,7 @@
  * Plugin Name: Tropipay WooCommerce
  * Plugin URI: https://www.tropipay.com/
  * Description: Pagar con tarjeta mediante la pasarela de pago Tropipay
- * Version: 4.7.0
+ * Version: 4.8.0
  * Author: Tropipay
  *
  */
@@ -75,18 +75,20 @@ function tropipay_apply_payment_gateway_fee($cart) {
   // Only apply the fee if the payment gateway is PayPal
   // Note that you might need to check this slug, depending on the PayPal gateway you're using
   parse_str($posted_data, $post_data_array);
-  $payment_method = $post_data_array['payment_method'];
+  $payment_method = isset($post_data_array['payment_method']) ? $post_data_array['payment_method'] : null; // Check if key exists
   if( $payment_method == 'tropipay' && $posted_data) {
     $metodo_pago = new WC_Tropipay;
-    // parse_str($posted_data, $post_data_array);
-    $tropipay_payment_method = $post_data_array['tropipay_payment_method'];
+    // parse_str($posted_data, $post_data_array); // Already parsed above
+    $tropipay_payment_method = isset($post_data_array['tropipay_payment_method']) ? $post_data_array['tropipay_payment_method'] : null; // Check if key exists
+    $tropipay_payment_method_post = isset($_POST["tropipay_payment_method"]) ? $_POST["tropipay_payment_method"] : null; // Check if key exists in $_POST
+
     if($metodo_pago->tropipayaddFees==='si') {
-      if($tropipay_payment_method === 'card' || $_POST["tropipay_payment_method"] === 'card') {
+      if($tropipay_payment_method === 'card' || $tropipay_payment_method_post === 'card') {
           $label = __( 'Comisión pago', 'tropipay-woo' );
           $amount = round(floatval($calculateamount / floatval(1 - (floatval($metodo_pago->tropipayfeecardpercent)/100))), 2) + floatval($metodo_pago->tropipayfeecardfixed) - $calculateamount;
           WC()->cart->add_fee( $label, $amount, true, 'standard' );
       }
-      if($tropipay_payment_method === 'balance'  || $_POST["tropipay_payment_method"] === 'balance') {
+      if($tropipay_payment_method === 'balance'  || $tropipay_payment_method_post === 'balance') {
           $label = __( 'Comisión pago', 'tropipay-woo' );
           $amount = floatval($calculateamount / floatval(1 - (floatval($metodo_pago->tropipayfeebalancepercent)/100))) + floatval($metodo_pago->tropipayfeebalancefixed) - $calculateamount;
           WC()->cart->add_fee( $label, $amount, true, 'standard' );
