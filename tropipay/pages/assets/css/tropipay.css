@@ -9,3 +9,6 @@
     background: url(../images/logoTropiPay.png) no-repeat left;
     background-size: contain;
 }
+.hidden {
+    display: none !important;
+}
