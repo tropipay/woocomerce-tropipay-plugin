@@ -26,7 +26,7 @@
  * Plugin Name: Tropipay WooCommerce
  * Plugin URI: https://www.tropipay.com/
  * Description: Pagar con tarjeta mediante la pasarela de pago Tropipay
- * Version: 4.8.0
+ * Version: 4.8.1
  * Author: Tropipay
  *
  */

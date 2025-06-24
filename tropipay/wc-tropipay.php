@@ -131,6 +131,11 @@ class WC_Tropipay extends WC_Payment_Gateway {
     function init_form_fields() {
         global $woocommerce;
 
+        if (is_admin()) {
+            // solo define campos avanzados si estás en el admin
+            $hidden = $this->check_tropipay_merchant_status() ? '' : 'hidden';
+        }
+
         $this->form_fields = array(
                 'enabled' => array(
                         'title'       => __( 'Activar Tropipay:', 'woocommerce' ),
@@ -314,7 +319,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         1 => 'Normal',
                         4 => 'Marketplace'
                     ),
-                    'class'       => $this->check_tropipay_merchant_status() ? '' : 'hidden'
+                    'class'       => $hidden
                 )
 			   	);
 				
