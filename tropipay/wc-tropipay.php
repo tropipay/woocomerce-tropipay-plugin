@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 /**
 * NOTA SOBRE LA LICENCIA DE USO DEL SOFTWARE
 * 
@@ -47,8 +51,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
     public function __construct() {
         $this->id                 = 'tropipay';
         // $this->icon               = home_url() . '/wp-content/plugins/tropipay/pages/assets/images/logoTropiPayp2.png';
-        $this->method_title       = __( 'Pago con Tarjeta (Tropipay)', 'woocommerce' );
-        $this->method_description = __( 'Esta es la opción de la pasarela de pago de Tropipay.', 'woocommerce' );
+        $this->method_title       = __( 'Pago con Tarjeta (Tropipay)', 'tropipay' );
+        $this->method_description = __( 'Esta es la opción de la pasarela de pago de Tropipay.', 'tropipay' );
         $this ->notify_url        = add_query_arg( 'wc-api', 'WC_tropipay', home_url( '/' ) );
         $this->log                =  new WC_Logger();
         $this->idLog              = $this->generateIdLog();
@@ -97,7 +101,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $stringLength = strlen($vars);
         $result = '';
         for ($i = 0; $i < 20; $i++) {
-            $result .= $vars[rand(0, $stringLength - 1)];
+            $result .= $vars[wp_rand(0, $stringLength - 1)];
         }
         return $result;
     }
@@ -125,7 +129,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                     update_option('wc_tropipay_accounts', array());
                 }
                 if ($this->get_option('tropipayactivar_log') === 'si') {
-                    $this->tropipayescribirLog_wc($this->idLog." -- Error fetching accounts: " . print_r($res, true), 'si');
+                    $this->tropipayescribirLog_wc($this->idLog." -- Error fetching accounts: " . json_encode($res), 'si');
                 }
                 return $res;
             }
@@ -214,13 +218,13 @@ class WC_Tropipay extends WC_Payment_Gateway {
         <tr valign="top">
             <th scope="row" class="titledesc">
                 <label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
-                <?php echo $this->get_tooltip_html( $data ); ?>
+                <?php echo wp_kses_post( $this->get_tooltip_html( $data ) ); ?>
             </th>
             <td class="forminp">
                 <fieldset>
                     <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
                     <button class="button-secondary <?php echo esc_attr( $data['class'] ); ?>" type="button" id="tropipay_sync_btn" style="<?php echo esc_attr( $data['css'] ); ?>">
-                        <?php echo esc_html__( 'Sincronizar con TropiPay', 'tropipay-woo' ); ?>
+                        <?php echo esc_html__( 'Sincronizar con TropiPay', 'tropipay' ); ?>
                     </button>
                     <p class="description"><?php echo wp_kses_post( $data['description'] ); ?></p>
                     <p id="tropipay_sync_warning" style="font-weight: bold; margin-top: 5px;"></p>
@@ -236,7 +240,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         
                         if (!clientid || !clientsecret) {
                             $btn.prop('disabled', true).addClass('disabled').css('cursor', 'not-allowed');
-                            $warning.text('<?php echo esc_js(__( 'Por favor, introduce y guarda primero tu Client ID y Client Secret.', 'tropipay-woo' )); ?>').css('color', '#a00');
+                            $warning.text('<?php echo esc_js(__( 'Por favor, introduce y guarda primero tu Client ID y Client Secret.', 'tropipay' )); ?>').css('color', '#a00');
                         } else {
                             $btn.prop('disabled', false).removeClass('disabled').css('cursor', 'pointer');
                             $warning.text('');
@@ -271,7 +275,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                         var $btn = $(this);
                         var $status = $('#tropipay_sync_status');
                         
-                        $btn.prop('disabled', true).text('<?php echo esc_js(__( 'Sincronizando...', 'tropipay-woo' )); ?>');
+                        $btn.prop('disabled', true).text('<?php echo esc_js(__( 'Sincronizando...', 'tropipay' )); ?>');
                         $status.text('').css('color', 'inherit');
                         
                         $.ajax({
@@ -283,18 +287,18 @@ class WC_Tropipay extends WC_Payment_Gateway {
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    $status.text('<?php echo esc_js(__( '¡Sincronizado con éxito! Recargando...', 'tropipay-woo' )); ?>').css('color', 'green');
+                                    $status.text('<?php echo esc_js(__( '¡Sincronizado con éxito! Recargando...', 'tropipay' )); ?>').css('color', 'green');
                                     setTimeout(function(){
                                         window.location.reload();
                                     }, 1500);
                                 } else {
-                                    $status.html(response.data || '<?php echo esc_js(__( 'Error al sincronizar.', 'tropipay-woo' )); ?>').css('color', 'red');
-                                    $btn.prop('disabled', false).text('<?php echo esc_js(__( 'Sincronizar con TropiPay', 'tropipay-woo' )); ?>');
+                                    $status.html(response.data || '<?php echo esc_js(__( 'Error al sincronizar.', 'tropipay' )); ?>').css('color', 'red');
+                                    $btn.prop('disabled', false).text('<?php echo esc_js(__( 'Sincronizar con TropiPay', 'tropipay' )); ?>');
                                 }
                             },
                             error: function() {
-                                $status.text('<?php echo esc_js(__( 'Error de red o sesión expirada. Verifica tu conexión.', 'tropipay-woo' )); ?>').css('color', 'red');
-                                $btn.prop('disabled', false).text('<?php echo esc_js(__( 'Sincronizar con TropiPay', 'tropipay-woo' )); ?>');
+                                $status.text('<?php echo esc_js(__( 'Error de red o sesión expirada. Verifica tu conexión.', 'tropipay' )); ?>').css('color', 'red');
+                                $btn.prop('disabled', false).text('<?php echo esc_js(__( 'Sincronizar con TropiPay', 'tropipay' )); ?>');
                             }
                         });
                     });
@@ -310,14 +314,14 @@ class WC_Tropipay extends WC_Payment_Gateway {
         check_ajax_referer( 'tropipay_sync_nonce', 'nonce' );
         
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( __( 'No tienes permisos para hacer esto.', 'tropipay-woo' ) );
+            wp_send_json_error( __( 'No tienes permisos para hacer esto.', 'tropipay' ) );
         }
 
         $clientid = $this->get_option('clientid');
         $clientsecret = $this->get_option('clientsecret');
 
         if ( empty( $clientid ) || empty( $clientsecret ) ) {
-            wp_send_json_error( __( 'Por favor, introduce y guarda primero tu Client ID y Client Secret.', 'tropipay-woo' ) );
+            wp_send_json_error( __( 'Por favor, introduce y guarda primero tu Client ID y Client Secret.', 'tropipay' ) );
         }
 
         // Force fetch and store
@@ -326,13 +330,13 @@ class WC_Tropipay extends WC_Payment_Gateway {
 
         $accounts = get_option('wc_tropipay_accounts');
         if ( is_array( $accounts ) && ! empty( $accounts ) ) {
-            wp_send_json_success( __( 'Cuentas sincronizadas correctamente.', 'tropipay-woo' ) );
+            wp_send_json_success( __( 'Cuentas sincronizadas correctamente.', 'tropipay' ) );
         } else {
-            $msg = __( 'No se pudieron sincronizar las cuentas o no tienes cuentas activas. ', 'tropipay-woo' );
+            $msg = __( 'No se pudieron sincronizar las cuentas o no tienes cuentas activas. ', 'tropipay' );
             if ( isset( $accounts_res['error'] ) && $accounts_res['error'] ) {
                 $msg .= ' Error: ' . $accounts_res['error'];
             } elseif ( isset( $accounts_res['data']['error'] ) ) {
-                $msg .= ' API Error: ' . print_r( $accounts_res['data']['error'], true );
+                $msg .= ' API Error: ' . ( is_array( $accounts_res['data']['error'] ) ? json_encode( $accounts_res['data']['error'] ) : $accounts_res['data']['error'] );
             } elseif ( is_array( $accounts ) && empty( $accounts ) ) {
                 $msg .= ' (La API devolvió 0 cuentas para este comercio)';
             }
@@ -341,7 +345,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
     }
 
     function payment_scripts() {
-        wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', WC_TROPIPAY_MAIN_FILE ));
+        wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', WC_TROPIPAY_MAIN_FILE ), array(), '5.0.0' );
         if ( is_checkout() || is_checkout_pay_page() ) {
             wp_enqueue_style( 'tropipay_styles' );
         }
@@ -380,11 +384,11 @@ class WC_Tropipay extends WC_Payment_Gateway {
             }
         }
 
-        $account_options = array('' => __( 'Sincroniza tus cuentas primero...', 'woocommerce' ));
+        $account_options = array('' => __( 'Sincroniza tus cuentas primero...', 'tropipay' ));
         $hide_account_id_class = 'hidden';
 
         if (count($active_accounts) > 1) {
-            $account_options = array('' => __( 'Seleccione una cuenta de destino...', 'woocommerce' ));
+            $account_options = array('' => __( 'Seleccione una cuenta de destino...', 'tropipay' ));
             foreach ($active_accounts as $acc) {
                 $id = $acc['id'] ?? '';
                 $currency = $acc['currency'] ?? '';
@@ -398,123 +402,123 @@ class WC_Tropipay extends WC_Payment_Gateway {
 
         $this->form_fields = array(
                 'enabled' => array(
-                        'title'       => __( 'Activar Tropipay:', 'woocommerce' ),
-                        'label'       => __( 'Activar pago Tropipay', 'woocommerce' ),
+                        'title'       => __( 'Activar Tropipay:', 'tropipay' ),
+                        'label'       => __( 'Activar pago Tropipay', 'tropipay' ),
                         'type'        => 'checkbox',
                         'description' => '',
                         'default'     => 'yes'
                 ),
                 'title' => array(
-                        'title'       => __( 'Título', 'woocommerce' ),
+                        'title'       => __( 'Título', 'tropipay' ),
                         'type'        => 'text',
-                        'description' => __( 'Payment method description that the customer will see on your checkout.', 'woocommerce' ),
-                        'default'     => __( 'Pago con TropiPay', 'woocommerce' ),
+                        'description' => __( 'Payment method description that the customer will see on your checkout.', 'tropipay' ),
+                        'default'     => __( 'Pago con TropiPay', 'tropipay' ),
                         'desc_tip'    => true,
                 ),
                 'description' => array(
-                        'title'       => __( 'Descripción', 'woocommerce' ),
+                        'title'       => __( 'Descripción', 'tropipay' ),
                         'type'        => 'textarea',
-                        'description' => __( 'Payment method description that the customer will see on your website.', 'woocommerce' ),
-                        'default'     => __( 'Esta es la opción de la pasarela de pago con tarjeta de Tropipay. Te ayudamos en todo lo que necesites desde nuestra web: <b>www.tropipay.com</b>', 'woocommerce' ),
+                        'description' => __( 'Payment method description that the customer will see on your website.', 'tropipay' ),
+                        'default'     => __( 'Esta es la opción de la pasarela de pago con tarjeta de Tropipay. Te ayudamos en todo lo que necesites desde nuestra web: <b>www.tropipay.com</b>', 'tropipay' ),
                         'desc_tip'    => true,
                 ),
                 'tropipayentorno' => array(
-                        'title'       => __( 'Entorno de Tropipay', 'woocommerce' ),
+                        'title'       => __( 'Entorno de Tropipay', 'tropipay' ),
                         'type'        => 'select',
-                        'description' => __( 'Entorno del proceso de pago.', 'woocommerce' ),
+                        'description' => __( 'Entorno del proceso de pago.', 'tropipay' ),
                         'default'     => 'Sandbox',
                         'desc_tip'    => true,
                         'options'     => array(
-                                'Sandbox' => __( 'Sandbox', 'woocommerce' ),
-                                'Live' => __( 'Live', 'woocommerce' )
+                                'Sandbox' => __( 'Sandbox', 'tropipay' ),
+                                'Live' => __( 'Live', 'tropipay' )
                         )
                 ),
                 'clientid' => array(
-                        'title'       => __( 'Client Id', 'woocommerce' ),
+                        'title'       => __( 'Client Id', 'tropipay' ),
                         'type'        => 'text',
-                        'description' => __( 'Client Id', 'woocommerce' ),
-                        'default'     => __( 'Client Id', 'woocommerce' ),
+                        'description' => __( 'Client Id', 'tropipay' ),
+                        'default'     => __( 'Client Id', 'tropipay' ),
                         'desc_tip'    => true,
                 ),
                 'clientsecret' => array(
-                        'title'       => __( 'Client Secret', 'woocommerce' ),
+                        'title'       => __( 'Client Secret', 'tropipay' ),
                         'type'        => 'password',
-                        'description' => __( 'Client Secret.', 'woocommerce' ),
-                        'default'     => __( '', 'woocommerce' ),
+                        'description' => __( 'Client Secret.', 'tropipay' ),
+                        'default'     => '',
                         'desc_tip'    => true
                 ),
                 'tropipay_sync' => array(
-                        'title'       => __( 'Sincronizar Cuentas', 'woocommerce' ),
+                        'title'       => __( 'Sincronizar Cuentas', 'tropipay' ),
                         'type'        => 'sync_button',
-                        'description' => __( 'Haz clic para sincronizar y conectar tu cuenta WooCommerce con TropiPay. Esto cargará de forma segura tus cuentas activas de destino.', 'woocommerce' ),
+                        'description' => __( 'Haz clic para sincronizar y conectar tu cuenta WooCommerce con TropiPay. Esto cargará de forma segura tus cuentas activas de destino.', 'tropipay' ),
                 ),
                 'accountId' => array(
-                        'title'       => __( 'Cuenta de destino', 'woocommerce' ),
+                        'title'       => __( 'Cuenta de destino', 'tropipay' ),
                         'type'        => 'select',
-                        'description' => __( 'Seleccione la cuenta de TropiPay donde se recibirá el dinero.', 'woocommerce' ),
+                        'description' => __( 'Seleccione la cuenta de TropiPay donde se recibirá el dinero.', 'tropipay' ),
                         'default'     => '',
                         'desc_tip'    => true,
                         'options'     => $account_options,
                         'class'       => $hide_account_id_class
                 ),
                 'tropipaymoneda' => array(
-                        'title'       => __( 'Tipo de Moneda', 'woocommerce' ),
+                        'title'       => __( 'Tipo de Moneda', 'tropipay' ),
                         'type'        => 'select',
-                        'description' => __( 'Moneda del proceso de pago.', 'woocommerce' ),
+                        'description' => __( 'Moneda del proceso de pago.', 'tropipay' ),
                         'default'     => 'AUTO',
                         'desc_tip'    => true,
                         'options'     => array(
-                                'AUTO' => __( 'AUTO', 'woocommerce' ),
-                                'EUR' => __( 'EURO', 'woocommerce' ),
-                                'USD' => __( 'DOLAR', 'woocommerce' )
+                                'AUTO' => __( 'AUTO', 'tropipay' ),
+                                'EUR' => __( 'EURO', 'tropipay' ),
+                                'USD' => __( 'DOLAR', 'tropipay' )
                         )
                 ),
                 'tropipaymentmethods' => array(
-                    'title'            => __( 'Formas de pago', 'woocommerce' ),
+                    'title'            => __( 'Formas de pago', 'tropipay' ),
                     'type'             => 'select',
-                    'description'      => __( 'Seleccione las formas de pago que desee', 'woocommerce'),
+                    'description'      => __( 'Seleccione las formas de pago que desee', 'tropipay'),
                     'default'          => '',
                     'desc_tip'         => true,
                     'options'          => array(
-                        'normal' => __('Pagar con tarjeta y con saldo Tropipay', 'woocommerce'),
-                        'onlycard' => __('Solo Pagar con tarjeta', 'woocommerce'),
-                        'onlytpp' => __('Solo Pagar con Tropipay', 'woocommerce'),
+                        'normal' => __('Pagar con tarjeta y con saldo Tropipay', 'tropipay'),
+                        'onlycard' => __('Solo Pagar con tarjeta', 'tropipay'),
+                        'onlytpp' => __('Solo Pagar con Tropipay', 'tropipay'),
                     )
                 ),
                 'tropipayshowlogo' => array(
-                    'title'       => __( 'Mostrar logo de TropiPay', 'woocommerce' ),
+                    'title'       => __( 'Mostrar logo de TropiPay', 'tropipay' ),
                     'type'        => 'select',
-                    'description' => __( '', 'woocommerce' ),
+                    'description' => '',
                     'default'     => 'si',
                     'desc_tip'    => true,
                     'options'     => array(
-                            'no' => __( 'No', 'woocommerce' ),
-                            'si' => __( 'Si', 'woocommerce' )
+                            'no' => __( 'No', 'tropipay' ),
+                            'si' => __( 'Si', 'tropipay' )
                     )
                 ),
                 'tropipayactivar_log' => array(
-                        'title'       => __( 'Activar Log', 'woocommerce' ),
+                        'title'       => __( 'Activar Log', 'tropipay' ),
                         'type'        => 'select',
-                        'description' => __( 'Activar trazas de log.', 'woocommerce' ),
+                        'description' => __( 'Activar trazas de log.', 'tropipay' ),
                         'default'     => 'no',
                         'desc_tip'    => true,
                         'options'     => array(
-                                'no' => __( 'No', 'woocommerce' ),
-                                'si' => __( 'Si', 'woocommerce' )
+                                'no' => __( 'No', 'tropipay' ),
+                                'si' => __( 'Si', 'tropipay' )
                         )
                 ),
 				'tropipayestado' => array(
-					'title'       => __( 'Estado', 'tropipay-woo' ),
+					'title'       => __( 'Estado', 'tropipay' ),
 					'type'        => 'select',
-					'description' => __( 'Estado tras el pago.', 'tropipay-woo' ),
+					'description' => __( 'Estado tras el pago.', 'tropipay' ),
 					'default'     => 'no',
 					'desc_tip'    => true,
 					'options'     => array()
 				),
                 'tropiexpirationdays' => array(
-                    'title'           => __( 'Días de cancelación', 'tropipay-woo'),
+                    'title'           => __( 'Días de cancelación', 'tropipay'),
                     'type'            => 'select',
-                    'description'     => __( '', 'woocommerce'),
+                    'description'     => '',
                     'default'         => 0,
                     'desc_tip'        => true,
                     'options'         => array(
@@ -534,59 +538,59 @@ class WC_Tropipay extends WC_Payment_Gateway {
                     )
                 ),
 				'tropipayaddFees' => array(
-					'title'       => __( 'Agregar Fees', 'tropipay-woo' ),
+					'title'       => __( 'Agregar Fees', 'tropipay' ),
 					'type'        => 'select',
-					'description' => __( 'Agregar Fees.', 'tropipay-woo' ),
+					'description' => __( 'Agregar Fees.', 'tropipay' ),
 					'default'     => 'no',
 					'desc_tip'    => true,
                     'options'     => array(
-                        'no' => __( 'No', 'woocommerce' ),
-                        'si' => __( 'Si', 'woocommerce' )
+                        'no' => __( 'No', 'tropipay' ),
+                        'si' => __( 'Si', 'tropipay' )
                     )
                 ),
                 'tropipayfeecardpercent' => array(
-                    'title'       => __( 'Fee de pago por tarjeta (%)', 'woocommerce' ),
+                    'title'       => __( 'Fee de pago por tarjeta (%)', 'tropipay' ),
                     'type'        => 'text',
-                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 3.45)', 'woocommerce' ),
+                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 3.45)', 'tropipay' ),
                     'default'     => '3.45',
                     'desc_tip'    => true,
                 ),
                 'tropipayfeecardfixed' => array(
-                    'title'       => __( 'Fee de pago por tarjeta (fijo)', 'woocommerce' ),
+                    'title'       => __( 'Fee de pago por tarjeta (fijo)', 'tropipay' ),
                     'type'        => 'text',
-                    'description' => __( 'Fee fijo para tarjeta (valor por defecto: 0.5)', 'woocommerce' ),
+                    'description' => __( 'Fee fijo para tarjeta (valor por defecto: 0.5)', 'tropipay' ),
                     'default'     => '0.5',
                     'desc_tip'    => true,
                 ),
                 'tropipayfeebalancepercent' => array(
-                    'title'       => __( 'Fee de pago con balance (%)', 'woocommerce' ),
+                    'title'       => __( 'Fee de pago con balance (%)', 'tropipay' ),
                     'type'        => 'text',
-                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 1.0)', 'woocommerce' ),
+                    'description' => __( 'Porcentaje fee para tarjeta (valor por defecto: 1.0)', 'tropipay' ),
                     'default'     => '1.0',
                     'desc_tip'    => true,
                 ),
                 'tropipayfeebalancefixed' => array(
-                    'title'       => __( 'Fee de pago con balance (fijo)', 'woocommerce' ),
+                    'title'       => __( 'Fee de pago con balance (fijo)', 'tropipay' ),
                     'type'        => 'text',
-                    'description' => __( 'Fee fijo para balance (valor por defecto: 0)', 'woocommerce' ),
+                    'description' => __( 'Fee fijo para balance (valor por defecto: 0)', 'tropipay' ),
                     'default'     => '0',
                     'desc_tip'    => true,
                 ),
 				'tropipayshowfees' => array(
-					'title'       => __( 'Mostrar fees', 'tropipay-woo' ),
+					'title'       => __( 'Mostrar fees', 'tropipay' ),
 					'type'        => 'select',
-					'description' => __( 'Mostrar Fees.', 'tropipay-woo' ),
+					'description' => __( 'Mostrar Fees.', 'tropipay' ),
 					'default'     => 'no',
 					'desc_tip'    => true,
                     'options'     => array(
-                        'no' => __( 'No', 'woocommerce' ),
-                        'si' => __( 'Si', 'woocommerce' )
+                        'no' => __( 'No', 'tropipay' ),
+                        'si' => __( 'Si', 'tropipay' )
                     )
                 ),
                 'tropipaypaymentcardtype' => array(
-                    'title'       => __( 'Tipo de paymentcard', 'tropipay-woo' ),
+                    'title'       => __( 'Tipo de paymentcard', 'tropipay' ),
                     'type'        => 'select',
-                    'description' => __( 'Tipo de paymentcard.', 'tropipay-woo' ),
+                    'description' => __( 'Tipo de paymentcard.', 'tropipay' ),
                     'default'     => 1,
                     'desc_tip'    => true,
                     'options'     => array(
@@ -606,7 +610,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
     function process_payment( $order_id ) {
         global $woocommerce;
 
-        // Check if there is a payment method sent via REST API (WooCommerce Blocks)
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( empty( $_POST['tropipay_payment_method'] ) ) {
             $raw_payload = file_get_contents( 'php://input' );
             if ( ! empty( $raw_payload ) ) {
@@ -614,38 +618,48 @@ class WC_Tropipay extends WC_Payment_Gateway {
                 if ( isset( $request_data['payment_data'] ) ) {
                     foreach ( $request_data['payment_data'] as $item ) {
                         if ( isset( $item['key'] ) && $item['key'] === 'tropipay_payment_method' ) {
-                            $_POST['tropipay_payment_method'] = sanitize_text_field( $item['value'] );
+                            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                            $_POST['tropipay_payment_method'] = sanitize_text_field( wp_unslash( $item['value'] ) );
                         }
                     }
                 }
                 if ( isset( $request_data['payment_method_data'] ) && isset( $request_data['payment_method_data']['tropipay_payment_method'] ) ) {
-                    $_POST['tropipay_payment_method'] = sanitize_text_field( $request_data['payment_method_data']['tropipay_payment_method'] );
+                    // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                    $_POST['tropipay_payment_method'] = sanitize_text_field( wp_unslash( $request_data['payment_method_data']['tropipay_payment_method'] ) );
                 }
             }
         }
 
         // Also check if we stored it in the WC session during selection in WooCommerce blocks
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( empty( $_POST['tropipay_payment_method'] ) && WC()->session ) {
             $session_method = WC()->session->get( 'tropipay_payment_method' );
             if ( ! empty( $session_method ) ) {
-                $_POST['tropipay_payment_method'] = sanitize_text_field( $session_method );
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $_POST['tropipay_payment_method'] = sanitize_text_field( wp_unslash( $session_method ) );
             }
         }
 
         // If no method selected yet, determine default/only option
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( empty( $_POST['tropipay_payment_method'] ) ) {
             $tropipaymentmethods = $this->get_option('tropipaymentmethods');
             if ( $tropipaymentmethods === 'onlycard' ) {
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing
                 $_POST['tropipay_payment_method'] = 'card';
             } elseif ( $tropipaymentmethods === 'onlytpp' ) {
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing
                 $_POST['tropipay_payment_method'] = 'balance';
             } else {
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing
                 $_POST['tropipay_payment_method'] = 'card'; // Fallback default
             }
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( ! empty( $_POST['tropipay_payment_method'] ) ) {
-            update_post_meta( $order_id, 'tropipay_payment_method', sanitize_text_field( $_POST['tropipay_payment_method'] ) );
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            update_post_meta( $order_id, 'tropipay_payment_method', sanitize_text_field( wp_unslash( $_POST['tropipay_payment_method'] ) ) );
         }
 
         $order = new WC_Order($order_id);
@@ -671,10 +685,10 @@ class WC_Tropipay extends WC_Payment_Gateway {
             $this->tropipayescribirLog_wc($this->idLog." -- "."Reutilizando enlace de pago existente: " . $existing_paylink, $logActivo);
             $action = $existing_paylink;
             $order = wc_get_order($order_id);
-            return '<h4>' . esc_html__( 'Espere, por favor...', 'tropipay-woo' ) . '</h4>' .
+            return '<h4>' . esc_html__( 'Espere, por favor...', 'tropipay' ) . '</h4>' .
                    '<form action="' . esc_url( $action ) . '" method="GET" id="tropipay_payment_form" style="display:none;">' .
                         '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="' . esc_attr__( 'Pagar con Tropipay', 'tropipay' ) . '" />' .
-                        '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">' . esc_html__( 'Cancelar Pedido', 'tropipay-woo' ) . '</a>' .
+                        '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">' . esc_html__( 'Cancelar Pedido', 'tropipay' ) . '</a>' .
                    '</form>' .
                    '<script>document.getElementById("tropipay_payment_form").submit();</script>';
         }
@@ -708,7 +722,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         }
 
 
-        $numpedido =  str_pad($order_id, 8, "0", STR_PAD_LEFT).date('is');
+        $numpedido =  str_pad($order_id, 8, "0", STR_PAD_LEFT).gmdate('is');
 
         //Se establece el entorno del SIS
         if($entorno=="Sandbox"){
@@ -747,7 +761,8 @@ class WC_Tropipay extends WC_Payment_Gateway {
         $datos=array(
             "paymentcardType" => $tropipaypaymentcardtype,
             "reference" => $numpedido,
-            "concept" => __('Order #: ') . $order->get_id(),
+            // translators: %s: Order ID
+            "concept" => sprintf( __( 'Pedido %s', 'tropipay' ), $order->get_id() ),
             "description" => " ",
             "amount" => $transaction_amount,
             "currency" => $moneda,
@@ -791,7 +806,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
         // Check if paylink creation was successful and data exists before accessing shortUrl
         if (!isset($paylink['data']['shortUrl'])) {
              $this->tropipayescribirLog_wc($this->idLog." -- "."Error al crear Paylink: No se encontró shortUrl. Respuesta: " . json_encode($paylink), $logActivo);
-             return '<p class="woocommerce-error">'.__('Hubo un error al generar el enlace de pago. Por favor, inténtelo de nuevo o contacte con el soporte.', 'tropipay-woo').'</p>';
+             return '<p class="woocommerce-error">'.__('Hubo un error al generar el enlace de pago. Por favor, inténtelo de nuevo o contacte con el soporte.', 'tropipay').'</p>';
         }
         $shorturl=$paylink['data']['shortUrl'];
         update_post_meta( $order_id, '_tropipay_paylink_url', $shorturl );
@@ -802,10 +817,10 @@ class WC_Tropipay extends WC_Payment_Gateway {
 
         $action = $shorturl;
 
-        return '<h4>' . esc_html__( 'Espere, por favor...', 'tropipay-woo' ) . '</h4>' .
+        return '<h4>' . esc_html__( 'Espere, por favor...', 'tropipay' ) . '</h4>' .
                '<form action="' . esc_url( $action ) . '" method="GET" id="tropipay_payment_form" style="display:none;">' .
                     '<input type="submit" class="button-alt" id="submit_tropipay_payment_form" value="' . esc_attr__( 'Pagar con Tropipay', 'tropipay' ) . '" />' .
-                    '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">' . esc_html__( 'Cancelar Pedido', 'tropipay-woo' ) . '</a>' .
+                    '<a class="button cancel" href="' . esc_url( $order->get_cancel_order_url() ) . '">' . esc_html__( 'Cancelar Pedido', 'tropipay' ) . '</a>' .
                '</form>' .
                '<script>document.getElementById("tropipay_payment_form").submit();</script>';
         
@@ -902,7 +917,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
                 $order->payment_complete($ds_bankordercode);
 
                 if (!empty($estado) && $estado !== 'processing' && $estado !== $order->get_status()) {
-                    $order->update_status($estado, __('Estado personalizado configurado.', 'tropipay-woo'));
+                    $order->update_status($estado, __('Estado personalizado configurado.', 'tropipay'));
                 }
 
                 $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. Respuesta de TropiPay: OK. PEDIDO ACEPTADO",$logActivo);
@@ -910,7 +925,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
             }
             else {
                 $this->tropipayescribirLog_wc($this->idLog." -- "."Operación finalizada. Respuesta de TropiPay: KO. PEDIDO RECHAZADO",$logActivo);
-                $order->update_status('failed', __('El pago en TropiPay fue rechazado.', 'tropipay-woo'));
+                $order->update_status('failed', __('El pago en TropiPay fue rechazado.', 'tropipay'));
                 wp_send_json_error('Pago rechazado por TropiPay.');
             }
         }
@@ -935,6 +950,7 @@ class WC_Tropipay extends WC_Payment_Gateway {
 
         // Si falló la generación del paylink, no bloqueamos la página para permitir un posterior reintento
         if (strpos($form_html, 'woocommerce-error') !== false) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo $form_html;
             return;
         }
@@ -942,14 +958,15 @@ class WC_Tropipay extends WC_Payment_Gateway {
         update_post_meta( $order_id, 'tropipay_payment_receipt', 'si' );
         
         if($this->get_option('tropimethod')!='embed' || $selectedMethod === 'balance') {
-            echo '<p>'.__('Gracias por su pedido, por favor espera mientras le redireccionamos a la plataforma de pago. <img src="'.home_url().'/wp-content/plugins/tropipay/pages/assets/images/loading.gif" alt="Desactivado" title="Desactivado" />', 'tropipay-woo').'</p>';
+            echo '<p>' . esc_html__( 'Gracias por su pedido, por favor espera mientras le redireccionamos a la plataforma de pago.', 'tropipay' ) . ' <img src="' . esc_url( plugins_url( 'pages/assets/images/loading.gif', WC_TROPIPAY_MAIN_FILE ) ) . '" alt="" /></p>';
         }
         else {
             if($selectedMethod) {
-                echo '<p>'.__('Gracias por su pedido, por favor introduzca los datos de su Tarjeta.', 'tropipay-woo').'</p>';
+                echo '<p>' . esc_html__( 'Gracias por su pedido, por favor introduzca los datos de su Tarjeta.', 'tropipay' ) . '</p>';
             }
         }
         
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo $form_html;
     }
 

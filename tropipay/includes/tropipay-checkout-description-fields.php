@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 add_filter( 'woocommerce_gateway_description', 'tropipay_description_fields', 20, 2 );
 add_action( 'woocommerce_checkout_process', 'tropipay_description_fields_validation' );
 add_action( 'woocommerce_checkout_update_order_meta', 'tropipay_checkout_update_order_meta', 1, 1 );
@@ -7,9 +11,11 @@ add_action( 'woocommerce_checkout_update_order_meta', 'tropipay_checkout_update_
 
 function tropipay_checkout_update_order_meta($order_id) {
     delete_post_meta( $order_id, 'tropipay_payment_receipt' );
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing
     if ( ! empty( $_POST['tropipay_payment_method'] ) ) {
         delete_post_meta( $order_id, 'tropipay_payment_method' );
-        add_post_meta( $order_id, 'tropipay_payment_method', sanitize_text_field( $_POST['tropipay_payment_method'] ) );
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        add_post_meta( $order_id, 'tropipay_payment_method', sanitize_text_field( wp_unslash( $_POST['tropipay_payment_method'] ) ) );
     }
 }
 
@@ -20,8 +26,10 @@ function tropipay_checkout_form_get_field_values() {
     ];
 
     foreach( $fields as $field_name => $value ) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if( !empty( $_POST[ $field_name ] ) ) {
-            $fields[ $field_name ] = sanitize_text_field( $_POST[ $field_name ] );
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $fields[ $field_name ] = sanitize_text_field( wp_unslash( $_POST[ $field_name ] ) );
         } else {
             unset( $fields[ $field_name ] );
         }
@@ -72,8 +80,8 @@ function tropipay_description_fields( $description, $payment_id ) {
     $default = '';
 
     $optionst = array(
-        'card' => __( 'Tarjeta de crédito', 'tropipay-woo' ) . $labelcardextrafee,
-        'balance' => __( 'Saldo de Tropipay', 'tropipay-woo' ) . $labelbalanceextrafee,
+        'card' => __( 'Tarjeta de crédito', 'tropipay' ) . $labelcardextrafee,
+        'balance' => __( 'Saldo de Tropipay', 'tropipay' ) . $labelbalanceextrafee,
     );
 
     if($tropipaymentmethods === 'onlycard') {

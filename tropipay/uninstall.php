@@ -22,10 +22,9 @@ delete_option( 'wc_tropipay_is_marketplace' );
 
 // Clean up any potential multisite options as well if multisite is active
 if ( is_multisite() ) {
-    global $wpdb;
-    $blogs = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
-    foreach ( $blogs as $blog_id ) {
-        switch_to_blog( $blog_id );
+    $tropipay_sites = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
+    foreach ( $tropipay_sites as $tropipay_blog_id ) {
+        switch_to_blog( $tropipay_blog_id );
         delete_option( 'woocommerce_tropipay_settings' );
         delete_option( 'wc_tropipay_accounts' );
         delete_option( 'wc_tropipay_is_marketplace' );

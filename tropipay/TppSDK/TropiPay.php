@@ -1,5 +1,10 @@
 <?php
-include __DIR__ . "/HttpClient.php";
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
+require_once __DIR__ . "/HttpClient.php";
 
 class TropiPay 
 {
@@ -30,7 +35,8 @@ class TropiPay
     }
 
     public function log($data, $type='error'){
-        error_log("TropiPay SDK [$type] => " . print_r($data, true));
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log("TropiPay SDK [$type] => " . json_encode($data));
     }
 
     public function login($clientId, $clientSecret) {

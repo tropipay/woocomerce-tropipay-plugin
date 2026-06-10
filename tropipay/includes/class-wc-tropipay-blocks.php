@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 
 final class WC_Tropipay_Blocks extends AbstractPaymentMethodType {
@@ -35,8 +40,8 @@ final class WC_Tropipay_Blocks extends AbstractPaymentMethodType {
 
     public function get_payment_method_data() {
         $metodo_pago = new WC_Tropipay();
-        $title = $metodo_pago->get_option( 'title', __( 'Pago con TropiPay', 'woocommerce' ) );
-        $description = $metodo_pago->get_option( 'description', __( 'Esta es la opción de la pasarela de pago con tarjeta de Tropipay.', 'woocommerce' ) );
+        $title = $metodo_pago->get_option( 'title', __( 'Pago con TropiPay', 'tropipay' ) );
+        $description = $metodo_pago->get_option( 'description', __( 'Esta es la opción de la pasarela de pago con tarjeta de Tropipay.', 'tropipay' ) );
         
         $show_logo = $metodo_pago->get_option( 'tropipayshowlogo' ) === 'si';
         $logo_url = plugins_url( 'pages/assets/images/logoTropiPayp2.png', WC_TROPIPAY_MAIN_FILE );
@@ -61,8 +66,8 @@ final class WC_Tropipay_Blocks extends AbstractPaymentMethodType {
         }
 
         $options = array(
-            'card' => __( 'Tarjeta de crédito', 'tropipay-woo' ) . $labelcardextrafee,
-            'balance' => __( 'Saldo de Tropipay', 'tropipay-woo' ) . $labelbalanceextrafee,
+            'card' => __( 'Tarjeta de crédito', 'tropipay' ) . $labelcardextrafee,
+            'balance' => __( 'Saldo de Tropipay', 'tropipay' ) . $labelbalanceextrafee,
         );
 
         $default_method = 'card';
