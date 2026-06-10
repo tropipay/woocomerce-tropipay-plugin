@@ -3,101 +3,153 @@
 class HttpClient 
 {
     /**
-     * @description Make HTTP-GET call
+     * @description Convert ["Key: Value"] headers to ["Key" => "Value"] associative array
+     * @param       array $headers_raw
+     * @return      array
+     */
+    private function parse_headers_array(array $headers_raw) {
+        $parsed = array();
+        foreach ($headers_raw as $header) {
+            $parts = explode(':', $header, 2);
+            if (count($parts) === 2) {
+                $parsed[trim($parts[0])] = trim($parts[1]);
+            } else {
+                $parsed[$header] = '';
+            }
+        }
+        return $parsed;
+    }
+
+    /**
+     * @description Make HTTP-GET call using WordPress HTTP API
      * @param       $url
      * @param       array $params
-     * @return      HTTP-Response body or an empty string if the request fails or is empty
+     * @param       array|null $headers
+     * @return      array containing 'error' (string/false) and 'data' (array/null)
      */
-    public function get($url, array $params, array $headers=null) {
-        $query = http_build_query($params); 
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-          CURLOPT_URL => $url.'?'.$query,
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => "",
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 30,
-          CURLOPT_CUSTOMREQUEST => "GET",
-          CURLOPT_HTTPHEADER => $headers
-        ));
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
-        curl_close($curl);
-        if(!$error) {
-            $response = json_decode($response, true);
+    public function get($url, array $params, array $headers = null) {
+        if (!empty($params)) {
+            $url = add_query_arg($params, $url);
         }
+
+        $args = array(
+            'timeout'     => 30,
+            'redirection' => 10,
+            'httpversion' => '1.0',
+            'headers'     => !empty($headers) ? $this->parse_headers_array($headers) : array()
+        );
+
+        $response = wp_remote_get($url, $args);
+
+        if (is_wp_error($response)) {
+            return array(
+                'error' => $response->get_error_message(),
+                'data'  => null
+            );
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $decoded = json_decode($body, true);
+
         return array(
-            'error'=> $error,
-            'data'=> $response
+            'error' => false,
+            'data'  => $decoded
         );
     }
+
     /**
-     * @description Make HTTP-POST call
+     * @description Make HTTP-POST call using WordPress HTTP API
      * @param       $url
      * @param       array $params
-     * @return      HTTP-Response body or an empty string if the request fails or is empty
+     * @param       array|null $headers
+     * @return      array containing 'error' (string/false) and 'data' (array/null)
      */
-    public function tpost($url, array $params, array $headers=null) {
-        if(!$headers){
-            $headers = array("content-type: application/json");
+    public function tpost($url, array $params, array $headers = null) {
+        if (empty($headers)) {
+            $headers_parsed = array("Content-Type" => "application/json");
+        } else {
+            $headers_parsed = $this->parse_headers_array($headers);
         }
-        $curl = curl_init();
-        $data = json_encode($params); // http_build_query($params)
-        curl_setopt_array($curl, array(
-          CURLOPT_URL => $url,
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => "",
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 30,
-          CURLOPT_CUSTOMREQUEST => "POST",
-          CURLOPT_POSTFIELDS => $data,
-          CURLOPT_HTTPHEADER => $headers
-        ));
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
-        curl_close($curl);
-        if(!$error) {
-            $response = json_decode($response, true);
+
+        // If content-type is json, encode the body
+        $has_json_content = false;
+        foreach ($headers_parsed as $key => $val) {
+            if (strtolower($key) === 'content-type' && strpos(strtolower($val), 'json') !== false) {
+                $has_json_content = true;
+                break;
+            }
         }
+
+        $body = $has_json_content ? json_encode($params) : $params;
+
+        $args = array(
+            'method'      => 'POST',
+            'timeout'     => 30,
+            'redirection' => 10,
+            'httpversion' => '1.0',
+            'headers'     => $headers_parsed,
+            'body'        => $body
+        );
+
+        $response = wp_remote_post($url, $args);
+
+        if (is_wp_error($response)) {
+            return array(
+                'error' => $response->get_error_message(),
+                'data'  => null
+            );
+        }
+
+        $body_response = wp_remote_retrieve_body($response);
+        $decoded = json_decode($body_response, true);
+
         return array(
-            'error'=> $error,
-            'data'=> $response
+            'error' => false,
+            'data'  => $decoded
         );
     }
+
     /**
-     * @description Make HTTP-PUT call
+     * @description Make HTTP-PUT call using WordPress HTTP API
      * @param       $url
      * @param       array $params
-     * @return      HTTP-Response body or an empty string if the request fails or is empty
+     * @return      string|false Response body or false on error
      */
     public function tHTTPPut($url, array $params) {
-        $query = http_build_query($params);
-        $ch    = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, false);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
-        $response = curl_exec($ch);
-        curl_close($ch);
-        return $response;
+        $args = array(
+            'method'  => 'PUT',
+            'timeout' => 30,
+            'body'    => $params
+        );
+
+        $response = wp_remote_request($url, $args);
+
+        if (is_wp_error($response)) {
+            return false;
+        }
+
+        return wp_remote_retrieve_body($response);
     }
+
     /**
-     * @category Make HTTP-DELETE call
-     * @param    $url
-     * @param    array $params
-     * @return   HTTP-Response body or an empty string if the request fails or is empty
+     * @description Make HTTP-DELETE call using WordPress HTTP API
+     * @param       $url
+     * @param       array $params
+     * @return      string|false Response body or false on error
      */
     public function tHTTPDelete($url, array $params) {
-        $query = http_build_query($params);
-        $ch    = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, false);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
-        $response = curl_exec($ch);
-        curl_close($ch);
-        return $response;
+        $args = array(
+            'method'  => 'DELETE',
+            'timeout' => 30,
+            'body'    => $params
+        );
+
+        $response = wp_remote_request($url, $args);
+
+        if (is_wp_error($response)) {
+            return false;
+        }
+
+        return wp_remote_retrieve_body($response);
     }
 }
