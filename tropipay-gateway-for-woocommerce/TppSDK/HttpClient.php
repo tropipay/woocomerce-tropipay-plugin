@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-class HttpClient 
+class Tropipay_Http_Client 
 {
     /**
      * @description Convert ["Key: Value"] headers to ["Key" => "Value"] associative array

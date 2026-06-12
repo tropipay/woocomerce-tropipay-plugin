@@ -52,7 +52,7 @@ function tropipay_description_fields( $description, $payment_id ) {
         return $description;
     }
     
-    $metodo_pago = new WC_Tropipay;
+    $metodo_pago = new Tropipay_Gateway;
 
     ob_start();
 
@@ -80,8 +80,8 @@ function tropipay_description_fields( $description, $payment_id ) {
     $default = '';
 
     $optionst = array(
-        'card' => __( 'Tarjeta de crédito', 'tropipay' ) . $labelcardextrafee,
-        'balance' => __( 'Saldo de Tropipay', 'tropipay' ) . $labelbalanceextrafee,
+        'card' => __( 'Tarjeta de crédito', 'tropipay-gateway-for-woocommerce' ) . $labelcardextrafee,
+        'balance' => __( 'Saldo de Tropipay', 'tropipay-gateway-for-woocommerce' ) . $labelbalanceextrafee,
     );
 
     if($tropipaymentmethods === 'onlycard') {

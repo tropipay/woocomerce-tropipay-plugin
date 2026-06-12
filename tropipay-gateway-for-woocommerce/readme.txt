@@ -1,5 +1,5 @@
 === Tropipay Gateway for WooCommerce ===
-Contributors: tropipay
+Contributors: tropipay, tropipaydev
 Donate link: https://www.tropipay.com/
 Tags: woocommerce, tropipay, payment gateway, gateway, payments
 Requires at least: 5.8
@@ -26,6 +26,16 @@ This version 5.0.0 has been redesigned from scratch complying with the strictest
 * **Enterprise-Class Performance**: Intelligent reuse of generated payment links (Paylinks) to optimize receipt page load time to 0 ms.
 * **Maximum Security**: Verification of cryptographic signatures (SHA256) and injection of nonces to protect communication against attacks and duplicate transactions.
 * **Complete Idempotency**: Async and robust webhook that correctly manages stock and order states in a secure and seamless way.
+
+== External services ==
+
+This plugin connects to the TropiPay payment platform API (either sandbox environment at `https://sandbox.tropipay.me` or production environment at `https://www.tropipay.com` or `https://tropipay.com`) to process payment transactions and sync merchant accounts.
+
+- **What the service is and what it is used for**: TropiPay is an international payment service provider. This plugin uses the TropiPay API to generate payment links (Paylinks) for checkout redirection and retrieve the merchant's active destination accounts.
+- **What data is sent and when**: During the checkout process, when the customer chooses TropiPay and proceeds to payment, the plugin sends payment details (amount, currency, unique order reference, concept, lang, return and notification URLs) and billing information (name, last name, email, phone, country, address, city, state, postal code). When synchronizing accounts in the admin panel, the plugin sends API client credentials (Client ID and Client Secret) to retrieve account information.
+- **Links to terms of use and privacy policy**:
+  - TropiPay Terms of Service: https://www.tropipay.com/terms
+  - TropiPay Privacy Policy: https://www.tropipay.com/privacy
 
 == Installation ==
 

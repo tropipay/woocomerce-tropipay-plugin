@@ -30,14 +30,15 @@
  * Author: Tropipay
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: tropipay
+ * Text Domain: tropipay-gateway-for-woocommerce
+ * Requires Plugins: woocommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-define( 'WC_TROPIPAY_MAIN_FILE', __FILE__ );
+define( 'TROPIPAY_MAIN_FILE', __FILE__ );
 add_action( 'plugins_loaded', 'tropipay_load' );
 
 // Register block integration on woocommerce_blocks_loaded
@@ -46,11 +47,11 @@ function tropipay_block_checkout_init() {
     if ( ! class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
         return;
     }
-    require_once plugin_dir_path( __FILE__ ) . 'includes/class-wc-tropipay-blocks.php';
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-tropipay-blocks.php';
     add_action(
         'woocommerce_blocks_payment_method_type_registration',
         function( $payment_method_registry ) {
-            $payment_method_registry->register( new WC_Tropipay_Blocks() );
+            $payment_method_registry->register( new Tropipay_Blocks() );
         }
     );
 }
@@ -63,7 +64,7 @@ add_action( 'rest_api_init', function () {
         'permission_callback' => function( $request ) {
             $nonce = $request->get_header( 'X-WP-Nonce' );
             if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-                return new WP_Error( 'rest_forbidden', __( 'Acceso denegado.', 'tropipay' ), array( 'status' => 403 ) );
+                return new WP_Error( 'rest_forbidden', __( 'Acceso denegado.', 'tropipay-gateway-for-woocommerce' ), array( 'status' => 403 ) );
             }
             return true;
         },
@@ -100,8 +101,8 @@ function tropipay_load() {
 }
 
 function tropipay_ajax_sync_accounts_handler() {
-    if ( class_exists( 'WC_Tropipay' ) ) {
-        $gateway = new WC_Tropipay();
+    if ( class_exists( 'Tropipay_Gateway' ) ) {
+        $gateway = new Tropipay_Gateway();
         $gateway->ajax_sync_accounts();
     } else {
         wp_send_json_error( 'TropiPay gateway class not found.' );
@@ -109,7 +110,7 @@ function tropipay_ajax_sync_accounts_handler() {
 }
 
 function tropipay_add_gateway($methods) {
-    $methods[] = 'WC_Tropipay';
+    $methods[] = 'Tropipay_Gateway';
     return $methods;
 }
 
@@ -137,17 +138,17 @@ function tropipay_apply_payment_gateway_fee($cart) {
   }
 
   parse_str($posted_data, $post_data_array);
-  $payment_method = isset($post_data_array['payment_method']) ? $post_data_array['payment_method'] : $chosen_payment_method;
+  $payment_method = isset($post_data_array['payment_method']) ? sanitize_text_field($post_data_array['payment_method']) : $chosen_payment_method;
 
   if( $payment_method == 'tropipay' ) {
-    $metodo_pago = new WC_Tropipay;
+    $metodo_pago = new Tropipay_Gateway;
     
     // First try the session (set by WooCommerce blocks via our REST API)
     $tropipay_payment_method = WC()->session ? WC()->session->get( 'tropipay_payment_method' ) : null;
     
     // If not in session, fallback to post data or post variable
     if ( empty( $tropipay_payment_method ) ) {
-        $tropipay_payment_method = isset($post_data_array['tropipay_payment_method']) ? $post_data_array['tropipay_payment_method'] : null;
+        $tropipay_payment_method = isset($post_data_array['tropipay_payment_method']) ? sanitize_text_field($post_data_array['tropipay_payment_method']) : null;
     }
     // phpcs:ignore WordPress.Security.NonceVerification.Missing
     $tropipay_payment_method_post = isset($_POST["tropipay_payment_method"]) ? sanitize_text_field( wp_unslash( $_POST["tropipay_payment_method"] ) ) : null;
@@ -168,7 +169,7 @@ function tropipay_apply_payment_gateway_fee($cart) {
 
     if($metodo_pago->tropipayaddFees==='si') {
       if($final_method === 'card') {
-          $label = __( 'Comisión pago', 'tropipay' );
+          $label = __( 'Comisión pago', 'tropipay-gateway-for-woocommerce' );
           $percent = floatval($metodo_pago->tropipayfeecardpercent);
           if ( $percent >= 100 || $percent < 0 ) {
               $percent = 0; // Guard against division by zero and negative rates
@@ -177,7 +178,7 @@ function tropipay_apply_payment_gateway_fee($cart) {
           WC()->cart->add_fee( $label, $amount, true, 'standard' );
       }
       if($final_method === 'balance') {
-          $label = __( 'Comisión pago', 'tropipay' );
+          $label = __( 'Comisión pago', 'tropipay-gateway-for-woocommerce' );
           $percent = floatval($metodo_pago->tropipayfeebalancepercent);
           if ( $percent >= 100 || $percent < 0 ) {
               $percent = 0; // Guard against division by zero and negative rates
@@ -190,25 +191,3 @@ function tropipay_apply_payment_gateway_fee($cart) {
 }
 
 add_action( 'woocommerce_cart_calculate_fees', 'tropipay_apply_payment_gateway_fee');
-
-
-/**
- * Add some JS
- */
-function tropipay_script() {
-    ?>
-    <script>
-    jQuery(document).ready(function($){
-      $('body').on('click','.checkout #tropipay_payment_method_card',function(){
-        $('body').trigger('update_checkout');
-      });
-      $('body').on('click','.checkout #tropipay_payment_method_balance',function(){
-        $('body').trigger('update_checkout');
-      });        
-    });
-
-    </script>
-  <?php
-}
-
-add_action( 'woocommerce_after_checkout_form', 'tropipay_script' );

@@ -16,7 +16,7 @@ class TropiPay
     public $enviroment;
 
     public function __construct($clientId, $clientSecret, $enviroment = 'production'){
-        $this->srv = new HttpClient(); 
+        $this->srv = new Tropipay_Http_Client(); 
         $this->opt = include __DIR__ . "/configure.php";
         $this->token = null;
 
