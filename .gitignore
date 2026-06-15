@@ -1,2 +1,5 @@
 # Ignore the WooCommerce storefront demo theme
 tropipay-shop-theme/
+
+# Ignore the temporary SVN checkout directory
+svn-checkout/
