@@ -42,9 +42,11 @@ rm -rf "$SVN_DIR"/tags/"$VERSION"/*
 # 4. Copy plugin files to trunk and tags/VERSION
 echo "Copying plugin files to trunk..."
 cp -RL "$PLUGIN_SRC"/* "$SVN_DIR/trunk/"
+rm -f "$SVN_DIR/trunk/"*.doc
 
 echo "Copying plugin files to tags/$VERSION..."
 cp -RL "$PLUGIN_SRC"/* "$SVN_DIR/tags/$VERSION/"
+rm -f "$SVN_DIR/tags/$VERSION/"*.doc
 
 # 5. Add files to SVN
 echo "Adding new files to SVN tracking..."
