@@ -3,3 +3,8 @@ tropipay-shop-theme/
 
 # Ignore the temporary SVN checkout directory
 svn-checkout/
+
+# SVN publication scripts and documentation
+prepare_svn.sh
+PUBLISHING.md
+generate_assets.py

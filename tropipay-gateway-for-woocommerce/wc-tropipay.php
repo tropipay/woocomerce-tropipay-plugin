@@ -104,7 +104,7 @@ class Tropipay_Gateway extends WC_Payment_Gateway {
             return;
         }
         
-        wp_register_script( 'tropipay_admin', plugins_url( 'pages/assets/js/tropipay-admin.js', TROPIPAY_MAIN_FILE ), array( 'jquery' ), '5.0.0', true );
+        wp_register_script( 'tropipay_admin', plugins_url( 'pages/assets/js/tropipay-admin.js', TROPIPAY_MAIN_FILE ), array( 'jquery' ), defined( 'TROPIPAY_VERSION' ) ? TROPIPAY_VERSION : '5.0.1', true );
         
         wp_localize_script( 'tropipay_admin', 'tropipay_admin_params', array(
             'sync_nonce'    => wp_create_nonce( 'tropipay_sync_nonce' ),
@@ -309,8 +309,9 @@ class Tropipay_Gateway extends WC_Payment_Gateway {
     }
 
     function payment_scripts() {
-        wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', TROPIPAY_MAIN_FILE ), array(), '5.0.0' );
-        wp_register_script( 'tropipay_checkout', plugins_url( 'pages/assets/js/tropipay-checkout.js', TROPIPAY_MAIN_FILE ), array( 'jquery' ), '5.0.0', true );
+        $version = defined( 'TROPIPAY_VERSION' ) ? TROPIPAY_VERSION : '5.0.1';
+        wp_register_style( 'tropipay_styles', plugins_url( 'pages/assets/css/tropipay.css', TROPIPAY_MAIN_FILE ), array(), $version );
+        wp_register_script( 'tropipay_checkout', plugins_url( 'pages/assets/js/tropipay-checkout.js', TROPIPAY_MAIN_FILE ), array( 'jquery' ), $version, true );
         if ( is_checkout() || is_checkout_pay_page() ) {
             wp_enqueue_style( 'tropipay_styles' );
             wp_enqueue_script( 'tropipay_checkout' );
@@ -643,7 +644,7 @@ class Tropipay_Gateway extends WC_Payment_Gateway {
 
     function generate_tropipay_form( $order_id ) {
             // Version
-        $merchantModule = 'woocommerce_tropipay_5.0.0';
+        $merchantModule = 'woocommerce_tropipay_' . ( defined( 'TROPIPAY_VERSION' ) ? TROPIPAY_VERSION : '5.0.1' );
 
         //Recuperamos los datos de config.
         $logActivo=$this->get_option('tropipayactivar_log');
@@ -878,7 +879,7 @@ class Tropipay_Gateway extends WC_Payment_Gateway {
         $response_safe_json = wp_json_encode($response);
         $this->tropipayescribirLog_wc($this->idLog." -- "."response: " .$response_safe_json ,$logActivo);
         
-        if($firma_local==$firma_remota) {
+        if ( hash_equals( (string) $firma_local, (string) $firma_remota ) ) {
             // Use the safely accessed response status
             if($response_status=="OK") {
                 // Marcar como procesado por seguridad

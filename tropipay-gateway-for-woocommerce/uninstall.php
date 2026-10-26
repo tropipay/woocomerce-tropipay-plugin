@@ -7,7 +7,7 @@
  * Deletes all stored configuration options and cache databases.
  *
  * @package WooCommerce\Gateways
- * @version 5.0.0
+ * @version 5.0.1
  */
 
 // If uninstall not called from WordPress, exit

@@ -26,12 +26,13 @@
  * Plugin Name: Tropipay Gateway for WooCommerce
  * Plugin URI: https://www.tropipay.com/
  * Description: Pagar con tarjeta mediante la pasarela de pago Tropipay
- * Version: 5.0.0
+ * Version: 5.0.1
  * Author: Tropipay
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: tropipay-gateway-for-woocommerce
  * Requires Plugins: woocommerce
+ * Requires PHP: 7.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,6 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'TROPIPAY_MAIN_FILE', __FILE__ );
+define( 'TROPIPAY_VERSION', '5.0.1' );
 add_action( 'plugins_loaded', 'tropipay_load' );
 
 // Register block integration on woocommerce_blocks_loaded

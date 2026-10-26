@@ -25,22 +25,39 @@ class Tropipay_Http_Client
     }
 
     /**
+     * @description Get User-Agent string with runtime environment details for API calls
+     * @return      string
+     */
+    private function get_user_agent() {
+        $wp_version = function_exists('get_bloginfo') ? get_bloginfo('version') : 'unknown';
+        $wc_version = defined('WC_VERSION') ? WC_VERSION : 'unknown';
+        $plugin_version = defined('TROPIPAY_VERSION') ? TROPIPAY_VERSION : '5.0.1';
+        return 'TropiPay-WooCommerce/' . $plugin_version . ' (PHP ' . PHP_VERSION . '; WordPress ' . $wp_version . '; WooCommerce ' . $wc_version . ')';
+    }
+
+    /**
      * @description Make HTTP-GET call using WordPress HTTP API
      * @param       $url
      * @param       array $params
      * @param       array|null $headers
      * @return      array containing 'error' (string/false) and 'data' (array/null)
      */
-    public function get($url, array $params, array $headers = null) {
+    public function get($url, array $params, ?array $headers = null) {
         if (!empty($params)) {
             $url = add_query_arg($params, $url);
         }
+
+        $headers_parsed = !empty($headers) ? $this->parse_headers_array($headers) : array();
+        $headers_parsed['X-Tropipay-Client'] = 'WooCommerce-Plugin';
+        $headers_parsed['X-Tropipay-Client-Version'] = defined('TROPIPAY_VERSION') ? TROPIPAY_VERSION : '5.0.1';
+        $headers_parsed['X-Tropipay-PHP-Version'] = PHP_VERSION;
 
         $args = array(
             'timeout'     => 30,
             'redirection' => 10,
             'httpversion' => '1.0',
-            'headers'     => !empty($headers) ? $this->parse_headers_array($headers) : array()
+            'user-agent'  => $this->get_user_agent(),
+            'headers'     => $headers_parsed
         );
 
         $response = wp_remote_get($url, $args);
@@ -68,12 +85,16 @@ class Tropipay_Http_Client
      * @param       array|null $headers
      * @return      array containing 'error' (string/false) and 'data' (array/null)
      */
-    public function tpost($url, array $params, array $headers = null) {
+    public function tpost($url, array $params, ?array $headers = null) {
         if (empty($headers)) {
             $headers_parsed = array("Content-Type" => "application/json");
         } else {
             $headers_parsed = $this->parse_headers_array($headers);
         }
+
+        $headers_parsed['X-Tropipay-Client'] = 'WooCommerce-Plugin';
+        $headers_parsed['X-Tropipay-Client-Version'] = defined('TROPIPAY_VERSION') ? TROPIPAY_VERSION : '5.0.1';
+        $headers_parsed['X-Tropipay-PHP-Version'] = PHP_VERSION;
 
         // If content-type is json, encode the body
         $has_json_content = false;
@@ -91,6 +112,7 @@ class Tropipay_Http_Client
             'timeout'     => 30,
             'redirection' => 10,
             'httpversion' => '1.0',
+            'user-agent'  => $this->get_user_agent(),
             'headers'     => $headers_parsed,
             'body'        => $body
         );

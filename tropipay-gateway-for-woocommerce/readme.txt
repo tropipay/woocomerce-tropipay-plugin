@@ -5,7 +5,7 @@ Tags: woocommerce, tropipay, payment gateway, gateway, payments
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 5.0.0
+Stable tag: 5.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,12 @@ The plugin includes a clean uninstallation mechanism that safely removes all con
 3. View of the modern block checkout with card and balance payment options.
 
 == Changelog ==
+
+= 5.0.1 =
+* Added explicit 'Requires PHP: 7.4' declaration in main plugin header.
+* Enhanced compatibility with PHP 8.2, 8.3, 8.4, and 8.5 runtimes (resolved implicitly nullable parameter deprecation).
+* Strengthened cryptographic webhook signature verification using constant-time comparison (hash_equals).
+* Added runtime environment telemetric headers for proactive merchant assistance.
 
 = 5.0.0 =
 * Major release.
